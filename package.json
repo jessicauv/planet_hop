@@ -1,0 +1,26 @@
+{
+  "name": "planet_hop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jessicauv/planet_hop.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jessicauv/planet_hop/issues"
+  },
+  "homepage": "https://github.com/jessicauv/planet_hop#readme",
+  "dependencies": {
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "vite": "^7.3.1"
+  }
+}

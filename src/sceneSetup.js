@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export function createScene() {
   const scene = new THREE.Scene()
@@ -43,13 +44,22 @@ export function createScene() {
     renderer.setSize(window.innerWidth, window.innerHeight)
   })
 
+  const controls = new OrbitControls(camera, renderer.domElement)
+
+  controls.enableDamping = true
+  controls.dampingFactor = 0.05
+  controls.rotateSpeed = 0.5
+  controls.enablePan = false
+  controls.minDistance = 2
+  controls.maxDistance = 20
+
   // Lighting
-  const ambient = new THREE.AmbientLight(0xffffff, 0.2)
+  const ambient = new THREE.AmbientLight(0xffffff, 0.3)
   scene.add(ambient)
 
-  const sunLight = new THREE.PointLight(0xffffff, 2, 100)
-  sunLight.position.set(0, 0, 0)
+  const sunLight = new THREE.PointLight(0xffffff, 3, 200)
+  sunLight.position.set(0, 1.6, -3) // near planet position
   scene.add(sunLight)
 
-  return { scene, camera, renderer }
+  return { scene, camera, renderer, controls }
 }

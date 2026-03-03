@@ -4,7 +4,7 @@ import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite } from './uiPanel'
 
-const { scene, camera, renderer } = createScene()
+const { scene, camera, renderer, controls } = createScene()
 
 let currentIndex = 0
 let currentPlanet
@@ -39,5 +39,7 @@ renderer.setAnimationLoop(() => {
   if (currentPlanet) {
     currentPlanet.rotation.y += 0.003
   }
+
+  controls.update()
   renderer.render(scene, camera)
 })

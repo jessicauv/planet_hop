@@ -5,10 +5,70 @@
   <title>Solar XR Mission</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+
+    #introScreen {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: black;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .intro-content {
+        display: flex;
+        align-items: center;
+        gap: 40px;
+        max-width: 900px;
+    }
+
+    .rocket {
+        width: 200px;
+    }
+
+    .intro-text h1 {
+        margin: 0;
+        font-size: 40px;
+    }
+
+    .intro-text p {
+        font-size: 18px;
+        margin: 20px 0;
+    }
+
+    button {
+        padding: 12px 24px;
+        font-size: 18px;
+        border: none;
+        background: #ff9800;
+        color: white;
+        cursor: pointer;
+        border-radius: 6px;
+    }
+
+    button:hover {
+        background: #ffb74d;
+    }
   </style>
 </head>
 <body>
+  <div id="introScreen">
+    <div class="intro-content">
+        <img src="/textures/rocket.png" class="rocket" />
+        <div class="intro-text">
+        <h1>Welcome, Cadet!</h1>
+        <p>
+            Your rocket is ready. We will visit every planet in our solar system.
+            Buckle up!
+        </p>
+        <button id="launchBtn">Launch 🚀</button>
+        </div>
+    </div>
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

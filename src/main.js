@@ -26,7 +26,16 @@ function loadPlanet(index) {
   scene.add(currentText)
 }
 
-loadPlanet(currentIndex)
+const introScreen = document.getElementById("introScreen")
+const launchBtn = document.getElementById("launchBtn")
+
+launchBtn.addEventListener("click", () => {
+  introScreen.style.opacity = "0"
+setTimeout(() => {
+  introScreen.style.display = "none"
+}, 500)
+  loadPlanet(currentIndex)
+})
 
 // Click to move to next planet
 window.addEventListener("click", () => {

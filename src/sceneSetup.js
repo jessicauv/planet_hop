@@ -17,6 +17,7 @@ export function createScene() {
 
   const renderer = new THREE.WebGLRenderer({ antialias: true })
   renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setPixelRatio(window.devicePixelRatio)   // Sharp on Retina/HiDPI displays
   renderer.xr.enabled = true
   renderer.physicallyCorrectLights = true
 
@@ -69,9 +70,15 @@ export function createScene() {
   const ambient = new THREE.AmbientLight(0xffffff, 0.3)
   scene.add(ambient)
 
-  const sunLight = new THREE.PointLight(0xffffff, 3, 200)
-  sunLight.position.set(0, 1.6, -3) // near planet position
+  // Main key light — off to upper-right so texture shadows create surface depth
+  const sunLight = new THREE.DirectionalLight(0xffffff, 2.5)
+  sunLight.position.set(6, 4, 3)
   scene.add(sunLight)
+
+  // Soft fill light from left to avoid pitch-black dark side
+  const fillLight = new THREE.DirectionalLight(0x8899cc, 0.4)
+  fillLight.position.set(-4, -1, 2)
+  scene.add(fillLight)
 
   return { scene, camera, renderer, controls, vrButton }
 }

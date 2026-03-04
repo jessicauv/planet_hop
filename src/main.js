@@ -127,29 +127,29 @@ function showPlanetSelection() {
   if (currentText) { scene.remove(currentText); currentText = null }
 
   // Zoom camera out to see all planets
-  camera.position.set(0, 1.6, 13)
+  camera.position.set(0, 1.6, 36)
   controls.target.set(0, 0, 0)
   controls.update()
 
   // Show selection message
   selectionMessageSprite = createSelectionMessageBox()
-  selectionMessageSprite.position.set(0, 3.5, 0)
+  selectionMessageSprite.position.set(0, 4.2, 0)
   scene.add(selectionMessageSprite)
 
   // Lay out all planets in a row
-  const spacing = 2.5
+  const spacing = 6.2
   const startX = -(planets.length - 1) * spacing / 2
 
   planets.forEach((planetData, i) => {
     const planet = createPlanet(planetData)
-    planet.position.set(startX + i * spacing, 0, 0)
-    planet.scale.set(0.65, 0.65, 0.65)
+    planet.position.set(startX + i * spacing, -0.8, 0)
+    planet.scale.set(1.6, 1.6, 1.6)
     planet.userData = { planetName: planetData.name, planetData }
     scene.add(planet)
     selectionPlanets.push(planet)
 
     const label = createNameLabel(planetData.name)
-    label.position.set(startX + i * spacing, -1.3, 0)
+    label.position.set(startX + i * spacing, -3.4, 0)
     scene.add(label)
     selectionNameLabels.push(label)
   })
@@ -313,6 +313,30 @@ launchBtn.addEventListener("click", (event) => {
 // Raycaster for interactive text navigation
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
+
+// Track hovered planet on selection screen
+let hoveredSelectionPlanet = null
+
+window.addEventListener('mousemove', (event) => {
+  if (!selectionMode || selectionPlanets.length === 0) return
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+  raycaster.setFromCamera(mouse, camera)
+
+  const intersects = raycaster.intersectObjects(selectionPlanets, true)
+  if (intersects.length > 0) {
+    let root = intersects[0].object
+    while (root && !root.userData.planetName) root = root.parent
+    if (root && root !== hoveredSelectionPlanet) {
+      hoveredSelectionPlanet = root
+      document.body.style.cursor = 'pointer'
+    }
+  } else {
+    hoveredSelectionPlanet = null
+    document.body.style.cursor = 'default'
+  }
+})
 
 // Click to interact with intro text or move to next planet - only after game has started
 window.addEventListener("click", (event) => {
@@ -491,9 +515,9 @@ window.addEventListener("click", (event) => {
           currentIndex++
           loadPlanet(currentIndex, 0)
         } else {
-          // Last fact of last planet — show planet selection screen (play sound)
+          // Last fact of last planet — fade to black, then show planet selection screen
           forwardSound.play()
-          showPlanetSelection()
+          fadeToScene(() => showPlanetSelection())
         }
       } else if (inBack) {
         if (currentFactIndex > 0 || currentIndex > 0) {
@@ -517,7 +541,16 @@ window.addEventListener("click", (event) => {
 renderer.setAnimationLoop(() => {
   if (currentPlanet) currentPlanet.rotation.y += 0.003
   if (planetTransition.outPlanet) planetTransition.outPlanet.rotation.y += 0.003
-  selectionPlanets.forEach(p => p.rotation.y += 0.005)
+  // Selection planet rotation + hover scale effect
+  const NORMAL_SCALE = 1.6
+  const HOVER_SCALE = 2.0
+  selectionPlanets.forEach(p => {
+    p.rotation.y += 0.005
+    const target = p === hoveredSelectionPlanet ? HOVER_SCALE : NORMAL_SCALE
+    const current = p.scale.x
+    const next = current + (target - current) * 0.12
+    p.scale.setScalar(next)
+  })
   controls.update()
 
   // --- subtle rotation for motion ---

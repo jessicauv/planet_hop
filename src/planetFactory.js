@@ -48,9 +48,14 @@ export function createPlanet(data) {
   const group = new THREE.Group()
 
   const geometry = new THREE.SphereGeometry(data.size, 64, 64)
+
+  const texture = loader.load(data.texture)
+  texture.anisotropy = 16   // Max anisotropy for crisp texture at oblique angles
+  texture.colorSpace = THREE.SRGBColorSpace
+
   const material = new THREE.MeshStandardMaterial({
-    map: loader.load(data.texture),
-    roughness: 1,
+    map: texture,
+    roughness: 0.85,  // Slightly less rough so lighting reveals more surface detail
     metalness: 0
   })
   const planetMesh = new THREE.Mesh(geometry, material)

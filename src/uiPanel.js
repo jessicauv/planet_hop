@@ -161,7 +161,7 @@ export function createSelectionMessageBox() {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 2560
-  canvas.height = 500
+  canvas.height = 620
 
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
@@ -171,10 +171,10 @@ export function createSelectionMessageBox() {
 
   context.fillStyle = "lightblue"
   context.textAlign = "center"
-  context.font = "bold 100px 'Space Grotesk', sans-serif"
-  context.fillText("Explorer… you've seen all the planets.", canvas.width / 2, 180)
-  context.font = "80px 'Space Grotesk', sans-serif"
-  context.fillText("Select the best possible future home.", canvas.width / 2, 320)
+  context.font = "bold 105px 'Space Grotesk', sans-serif"
+  context.fillText("Explorer, you've seen all the planets.", canvas.width / 2, 200)
+  context.font = "90px 'Space Grotesk', sans-serif"
+  context.fillText("Select the best possible future home.", canvas.width / 2, 360)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -187,7 +187,7 @@ export function createSelectionMessageBox() {
     blending: THREE.NormalBlending
   })
   const sprite = new THREE.Sprite(material)
-  sprite.scale.set(18, 3.5, 1)
+  sprite.scale.set(22, 5, 1)
   return sprite
 }
 
@@ -195,12 +195,12 @@ export function createNameLabel(name) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 512
-  canvas.height = 128
+  canvas.height = 160
 
   context.fillStyle = "lightblue"
-  context.font = "bold 72px 'Space Grotesk', sans-serif"
+  context.font = "bold 96px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText(name, canvas.width / 2, 115)
+  context.fillText(name, canvas.width / 2, 130)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -212,7 +212,7 @@ export function createNameLabel(name) {
     depthTest: true
   })
   const sprite = new THREE.Sprite(material)
-  sprite.scale.set(2.5, 0.6, 1)
+  sprite.scale.set(4.0, 1.1, 1)
   return sprite
 }
 

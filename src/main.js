@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -11,25 +11,28 @@ const { scene, camera, renderer, controls } = createScene()
 const { milkyWaySphere, closeStars, farStars, distantStars } = createStarfield(scene)
 
 let currentIndex = 0
+let currentFactIndex = 0
 let currentPlanet
 let currentText
 
-function loadPlanet(index) {
+function loadPlanet(index, factIndex = 0) {
   if (currentPlanet) {
     scene.remove(currentPlanet)
     scene.remove(currentText)
   }
 
+  currentFactIndex = factIndex
+
   const data = planets[index]
   currentPlanet = createPlanet(data)
-  currentPlanet.position.set(-2, 0, 0)  // Moved down to be fully in screen
-  currentPlanet.scale.set(2.2, 2.2, 2.2)  // Bigger planet, fully inside screen
+  currentPlanet.position.set(-2, 0, 0)
+  currentPlanet.scale.set(2.2, 2.2, 2.2)
   scene.add(currentPlanet)
 
-  // Create fact text in a styled textbox similar to intro text
-  currentText = createFactTextBox(data.fact)
-  currentText.position.set(4, 0, 0)    // Right side, same y as planet
-  currentText.scale.set(5.33, 3, 1)        // Keep textbox size
+  // Create fact text box showing the first fact
+  currentText = createFactTextBox(data.facts[factIndex], data.name, index, factIndex, data.facts.length)
+  currentText.position.set(4, 0, 0)
+  currentText.scale.set(5.33, 3, 1)
   scene.add(currentText)
 }
 
@@ -147,11 +150,55 @@ window.addEventListener("click", (event) => {
       }
       // If clicked on main text area, do nothing (keep current state)
     }
-  } else if (gameStarted) {
-    // Normal navigation between planets
-    currentIndex++
-    if (currentIndex >= planets.length) currentIndex = 0
-    loadPlanet(currentIndex)
+  } else if (gameStarted && currentText) {
+    // Navigate planets via arrows on the fact text box
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+
+    raycaster.setFromCamera(mouse, camera)
+    const intersects = raycaster.intersectObject(currentText)
+
+    if (intersects.length > 0) {
+      const uv = intersects[0].uv
+      const canvasWidth = 1280
+      const canvasHeight = 720
+      const clickX = uv.x * canvasWidth
+      const clickY = (1 - uv.y) * canvasHeight
+
+      const { backButtonArea, forwardButtonArea } = currentText.userData
+
+      const inBack = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
+                     clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
+
+      const inForward = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
+                        clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
+
+      const data = planets[currentIndex]
+      const totalFacts = data.facts.length
+
+      if (inForward) {
+        if (currentFactIndex < totalFacts - 1) {
+          // Show next fact for same planet
+          currentFactIndex++
+          updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+        } else if (currentIndex < planets.length - 1) {
+          // All facts seen — advance to next planet
+          currentIndex++
+          loadPlanet(currentIndex, 0)
+        }
+      } else if (inBack) {
+        if (currentFactIndex > 0) {
+          // Go to previous fact on same planet
+          currentFactIndex--
+          updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+        } else if (currentIndex > 0) {
+          // Go to previous planet at its last fact
+          currentIndex--
+          const prevData = planets[currentIndex]
+          loadPlanet(currentIndex, prevData.facts.length - 1)
+        }
+      }
+    }
   }
 })
 

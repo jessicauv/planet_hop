@@ -45,37 +45,73 @@ export function createTextSprite(message) {
   return sprite
 }
 
-export function createFactTextBox(factText) {
+function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts) {
+  // Draw background box with 60% opacity
+  context.fillStyle = "rgba(0, 0, 128, 0.6)"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+
+  // Draw border
+  context.strokeStyle = "lightblue"
+  context.lineWidth = 6
+  context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
+
+  // Draw planet name title
+  context.fillStyle = "lightblue"
+  context.font = "bold 80px 'Space Grotesk', sans-serif"
+  context.textAlign = "center"
+  context.fillText(planetName, canvas.width / 2, 100)
+
+  // Draw fact text with wrapping
+  context.fillStyle = "lightblue"
+  context.font = "60px 'Space Grotesk', sans-serif"
+  const maxWidth = canvas.width - 100
+  const fontSize = 60
+  const lineHeight = fontSize * 1.2
+  drawWrappedText(context, factText, canvas.width / 2, 220, maxWidth, fontSize, lineHeight)
+
+  // Draw page indicator dots (e.g. ● ● ○)
+  const dotRadius = 16
+  const dotSpacing = 50
+  const totalDots = totalFacts
+  const dotsStartX = canvas.width / 2 - ((totalDots - 1) * dotSpacing) / 2
+  const dotsY = canvas.height - 130
+  for (let i = 0; i < totalDots; i++) {
+    context.beginPath()
+    context.arc(dotsStartX + i * dotSpacing, dotsY, dotRadius, 0, Math.PI * 2)
+    context.fillStyle = i === factIndex ? "lightblue" : "rgba(173, 216, 230, 0.3)"
+    context.fill()
+  }
+
+  // Draw navigation arrows
+  const buttonSize = 80
+  const bottomY = canvas.height - 80
+
+  // Back arrow (left) - dimmed on first fact of first planet
+  const isFirst = planetIndex === 0 && factIndex === 0
+  context.fillStyle = isFirst ? "rgba(255, 255, 255, 0.3)" : "lightblue"
+  context.beginPath()
+  context.moveTo(140, bottomY - buttonSize / 2)
+  context.lineTo(80, bottomY)
+  context.lineTo(140, bottomY + buttonSize / 2)
+  context.fill()
+
+  // Forward arrow (right)
+  context.fillStyle = "lightblue"
+  context.beginPath()
+  context.moveTo(canvas.width - 140, bottomY - buttonSize / 2)
+  context.lineTo(canvas.width - 80, bottomY)
+  context.lineTo(canvas.width - 140, bottomY + buttonSize / 2)
+  context.fill()
+}
+
+export function createFactTextBox(factText, planetName = "Planet Fact", planetIndex = 0, factIndex = 0, totalFacts = 3) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
 
   canvas.width = 1280
   canvas.height = 720
 
-  // Draw background box with 60% opacity
-  context.fillStyle = "rgba(0, 0, 128, 0.6)"
-  context.fillRect(0, 0, canvas.width, canvas.height)
-  
-  // Draw border
-  context.strokeStyle = "lightblue"
-  context.lineWidth = 6
-  context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
-
-  // Draw title
-  context.fillStyle = "lightblue"
-  context.font = "bold 80px 'Space Grotesk', sans-serif"
-  context.textAlign = "center"
-  context.fillText("Planet Fact", canvas.width / 2, 100)
-
-  // Draw fact text with wrapping
-  context.fillStyle = "lightblue"
-  context.font = "60px 'Space Grotesk', sans-serif"
-  
-  const maxWidth = canvas.width - 100
-  const fontSize = 60
-  const lineHeight = fontSize * 1.2
-  
-  drawWrappedText(context, factText, canvas.width / 2, 220, maxWidth, fontSize, lineHeight)
+  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -91,13 +127,33 @@ export function createFactTextBox(factText) {
   const sprite = new THREE.Sprite(material)
   sprite.scale.set(9, 5, 1)
   
-  // Store fact information on the sprite
+  // Store fact information and button areas on the sprite
   sprite.userData = { 
     isFactBox: true,
-    factText: factText
+    factText: factText,
+    backButtonArea: { x: 50, y: canvas.height - 150, width: 120, height: 120 },
+    forwardButtonArea: { x: canvas.width - 170, y: canvas.height - 150, width: 120, height: 120 }
   }
 
   return sprite
+}
+
+export function updateFactTextBox(sprite, factText, planetName, planetIndex, factIndex, totalFacts = 3) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  canvas.width = 1280
+  canvas.height = 720
+
+  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+
+  sprite.material.map = texture
+  sprite.material.needsUpdate = true
+
+  sprite.userData.factText = factText
 }
 
 export function createInteractiveIntroText(textState = 0) {

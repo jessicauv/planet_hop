@@ -4,8 +4,12 @@
   <meta charset="UTF-8" />
   <title>Solar XR Mission</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+    body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; }
 
     #introScreen {
         position: absolute;
@@ -22,57 +26,103 @@
 
     .intro-content {
         display: flex;
+        flex-direction: column;
         align-items: center;
         gap: 40px;
-        max-width: 900px;
+        max-width: 800px;
         background: rgba(0, 0, 0, 0.3);
-        padding: 40px;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    .rocket {
-        width: 200px;
+        padding: 80px;
+        border-radius: 16px;
+        box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
     }
 
     .intro-text h1 {
         margin: 0;
-        font-size: 40px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        font-size: 60px;
+        font-family: 'Press Start 2P', cursive;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
     }
 
     .intro-text p {
-        font-size: 18px;
-        margin: 20px 0;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        font-size: 24px;
+        margin: 30px 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        text-align: center;
     }
 
     button {
-        padding: 12px 24px;
+        padding: 20px 40px;
         font-size: 18px;
+        font-family: 'Space Grotesk', sans-serif;
         border: none;
-        background: #ff9800;
-        color: white;
+        background: white;
+        color: black;
         cursor: pointer;
-        border-radius: 6px;
+        border-radius: 0;
+        text-align: center;
+        margin: 0 auto;
+        display: block;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1), transparent);
+        transition: left 0.5s;
     }
 
     button:hover {
-        background: #ffb74d;
+        background: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    button:hover::before {
+        left: 100%;
+    }
+
+    button:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .audio-controls {
+        margin-top: 20px;
+    }
+
+    .audio-btn {
+        background: transparent;
+        border: 2px solid white;
+        color: white;
+        padding: 10px 20px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .audio-btn:hover {
+        background: white;
+        color: black;
+        transform: scale(1.05);
     }
   </style>
 </head>
 <body>
   <div id="introScreen">
     <div class="intro-content">
-        <img src="/textures/rocket.png" class="rocket" />
         <div class="intro-text">
-        <h1>Welcome, Cadet!</h1>
+        <h1>PLANET HOP</h1>
         <p>
-            Your rocket is ready. We will visit every planet in our solar system.
-            Buckle up!
+            A MIXED REALITY EXPERIENCE FOR THE WEB
         </p>
-        <button id="launchBtn">Launch 🚀</button>
+        <button id="launchBtn">LAUNCH EXPERIENCE</button>
         </div>
     </div>
   </div>

@@ -4,6 +4,7 @@ import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite } from './uiPanel'
 
+
 const { scene, camera, renderer, controls } = createScene()
 
 // Create stars + Milky Way - this will be visible throughout the entire experience

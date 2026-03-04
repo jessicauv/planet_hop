@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { Howl } from 'howler';
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
@@ -50,6 +51,33 @@ export function createScene() {
   scene.add(sunLight)
 
   return { scene, camera, renderer, controls }
+}
+
+// Function to create and play space audio
+export function createSpaceAudio() {
+  console.log('Howl library loaded:', typeof Howl)
+  console.log('Creating Howl instance with src:', '/audio/space.ogg', '/audio/space.mp3')
+  
+  const sound = new Howl({
+    src: ['/audio/space.ogg', '/audio/space.mp3'], // OGG first, MP3 fallback
+    loop: true,
+    volume: 0.5,
+    onload: () => {
+      console.log('Audio file loaded successfully')
+    },
+    onloaderror: (id, err) => {
+      console.error('Audio file failed to load:', err)
+    },
+    onplay: () => {
+      console.log('Audio started playing')
+    },
+    onplayerror: (id, err) => {
+      console.error('Audio failed to play:', err)
+    }
+  })
+  
+  console.log('Howl instance created:', sound)
+  return sound
 }
 
 // Function to create layered starfield + Milky Way

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { createScene, createStarfield } from './sceneSetup'
+import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite } from './uiPanel'
@@ -34,12 +34,34 @@ const introScreen = document.getElementById("introScreen")
 const launchBtn = document.getElementById("launchBtn")
 
 let gameStarted = false
+let spaceAudio
 
 launchBtn.addEventListener("click", () => {
+  console.log('Launch button clicked')
   introScreen.style.opacity = "0"
   setTimeout(() => {
     introScreen.style.display = "none"
   }, 500)
+  
+  // Create and play space audio when launching
+  console.log('Creating space audio...')
+  spaceAudio = createSpaceAudio()
+  console.log('Audio object created:', spaceAudio)
+  
+  // Resume audio context if needed
+  if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+    const audioCtx = new (AudioContext || webkitAudioContext)();
+    audioCtx.resume().then(() => {
+      console.log('Audio context resumed')
+    }).catch(err => {
+      console.error('Failed to resume audio context:', err)
+    })
+  }
+  
+  console.log('Attempting to play audio...')
+  spaceAudio.play()
+  console.log('Audio play method called')
+  
   loadPlanet(currentIndex)
   gameStarted = true
 })

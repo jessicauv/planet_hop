@@ -125,7 +125,7 @@ export function createStarfield(scene) {
       vertexColors: true,
       transparent: true,
       opacity: 1.0,
-      depthTest: false,  // Fix for flickering through Milky Way
+      depthTest: true,
       blending: THREE.AdditiveBlending,  // Better blending for stars
       sizeAttenuation: true
     })

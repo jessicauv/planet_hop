@@ -131,7 +131,7 @@ export function createInteractiveIntroText(textState = 0) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
     // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const maxWidth = canvas.width - 200 // Reduce padding to make text more squished
+    const maxWidth = canvas.width - 300 // Reduce padding to make text more squished
     const fontSize = 72
     const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
@@ -139,15 +139,15 @@ export function createInteractiveIntroText(textState = 0) {
   } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
-    const maxWidth = canvas.width - 100 // Leave some padding
+    const maxWidth = canvas.width - 300 // Leave some padding
     const fontSize = 48
     const lineHeight = fontSize * 1.2
     
     drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger…\nAnd we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
-    const maxWidth = canvas.width - 100 // Leave some padding
+    const missionText = "Now Earth is in danger… And we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 300 // More padding to match visual appearance of climateText
     const fontSize = 48
     const lineHeight = fontSize * 1.2
     
@@ -160,7 +160,7 @@ export function createInteractiveIntroText(textState = 0) {
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
 
-  const material = new THREE.SpriteMaterial({ 
+  const material = new THREE.SpriteMaterial({
     map: texture,
     transparent: true,
     depthWrite: false,
@@ -252,8 +252,8 @@ export function updateInteractiveIntroText(sprite, textState) {
     drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger…\nAnd we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
-    const maxWidth = canvas.width - 100 // Leave some padding
+    const missionText = "Now Earth is in danger… And we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 300 // More padding to match visual appearance of climateText
     const fontSize = 72
     const lineHeight = fontSize * 1.2
     

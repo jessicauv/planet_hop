@@ -126,21 +126,23 @@ window.addEventListener("click", (event) => {
         introTextState = 0
         updateInteractiveIntroText(introText, introTextState)
         console.log('Navigated back to state:', introTextState)
-      } else if (inForwardButton && introTextState < 1) {
-        // Go forward to second state
-        introTextState = 1
-        updateInteractiveIntroText(introText, introTextState)
-        console.log('Navigated forward to state:', introTextState)
+      } else if (inForwardButton) {
+        if (introTextState < 2) {
+          // Go forward to next state
+          introTextState++
+          updateInteractiveIntroText(introText, introTextState)
+          console.log('Navigated forward to state:', introTextState)
+        } else {
+          // On final state, remove intro text and show planets
+          scene.remove(introText)
+          introText = null
+          
+          // Now show the first planet (Sun)
+          currentIndex = 0
+          loadPlanet(currentIndex)
+        }
       }
       // If clicked on main text area, do nothing (keep current state)
-    } else {
-      // User clicked outside intro text - proceed to planets
-      scene.remove(introText)
-      introText = null
-      
-      // Now show the first planet (Sun)
-      currentIndex = 0
-      loadPlanet(currentIndex)
     }
   } else if (gameStarted) {
     // Normal navigation between planets

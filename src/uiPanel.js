@@ -74,14 +74,14 @@ export function createInteractiveIntroText(textState = 0) {
   
   if (textState === 0) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    // Wrap long text into multiple lines
+    // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const maxWidth = canvas.width - 100 // Leave some padding
+    const maxWidth = canvas.width - 200 // Reduce padding to make text more squished
     const fontSize = 72
-    const lineHeight = fontSize * 1.2
+    const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
     drawWrappedText(context, longText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
-  } else {
+  } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
     const maxWidth = canvas.width - 100 // Leave some padding
@@ -89,6 +89,14 @@ export function createInteractiveIntroText(textState = 0) {
     const lineHeight = fontSize * 1.2
     
     drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+  } else {
+    // Third state: Mission message
+    const missionText = "Now Earth is in danger…\nAnd we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 100 // Leave some padding
+    const fontSize = 48
+    const lineHeight = fontSize * 1.2
+    
+    drawWrappedText(context, missionText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons
@@ -132,7 +140,7 @@ function drawNavigationButtons(context, width, height, textState) {
   context.fill()
   
   // Forward button (right) - arrow pointing right
-  context.fillStyle = textState === 1 ? "rgba(255, 255, 255, 0.3)" : "lightblue"
+  context.fillStyle = "lightblue"
   context.beginPath()
   context.moveTo(width - 140, bottomY - buttonSize/2)
   context.lineTo(width - 80, bottomY)
@@ -172,14 +180,14 @@ export function updateInteractiveIntroText(sprite, textState) {
   
   if (textState === 0) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    // Wrap long text into multiple lines
+    // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const maxWidth = canvas.width - 100 // Leave some padding
+    const maxWidth = canvas.width - 200 // Reduce padding to make text more squished
     const fontSize = 72
-    const lineHeight = fontSize * 1.2
+    const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
     drawWrappedText(context, longText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
-  } else {
+  } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
     const maxWidth = canvas.width - 100 // Leave some padding
@@ -187,6 +195,14 @@ export function updateInteractiveIntroText(sprite, textState) {
     const lineHeight = fontSize * 1.2
     
     drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+  } else {
+    // Third state: Mission message
+    const missionText = "Now Earth is in danger…\nAnd we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 100 // Leave some padding
+    const fontSize = 72
+    const lineHeight = fontSize * 1.2
+    
+    drawWrappedText(context, missionText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons

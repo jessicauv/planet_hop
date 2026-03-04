@@ -61,7 +61,7 @@ export function createSpaceAudio() {
   const sound = new Howl({
     src: ['/audio/space.ogg', '/audio/space.mp3'], // OGG first, MP3 fallback
     loop: true,
-    volume: 0.5,
+    volume: 0.1,
     onload: () => {
       console.log('Audio file loaded successfully')
     },

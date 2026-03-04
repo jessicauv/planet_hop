@@ -1,8 +1,12 @@
 import * as THREE from 'three'
+import { Howl } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo } from './uiPanel'
+
+const forwardSound = new Howl({ src: ['/audio/front_arrow.ogg'] })
+const backSound = new Howl({ src: ['/audio/back_arrow.ogg'] })
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -24,6 +28,47 @@ let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
 let planetHopLogo = null
+
+// Typewriter state
+const introBodyTexts = [
+  "For many years, people burned too many fossil fuels, cut down forests, and polluted the air.",
+  "This caused climate change. There were huge storms, wildfires, floods, and droughts.",
+  "Earth is in danger. Explore space to find a new home. Your mission begins now!"
+]
+const typewriter = {
+  active: false,
+  fullText: '',
+  visibleChars: 0,
+  charsPerFrame: 0.3,
+  mode: null // 'intro', 'fact', 'result'
+}
+
+function startTypewriter(text, mode) {
+  typewriter.active = true
+  typewriter.fullText = text
+  typewriter.visibleChars = 0
+  typewriter.mode = mode
+}
+
+function applyTypewriterFrame() {
+  const chars = typewriter.visibleChars
+  if (typewriter.mode === 'intro' && introText) {
+    updateInteractiveIntroText(introText, introTextState, chars)
+  } else if (typewriter.mode === 'fact' && currentText) {
+    const data = planets[currentIndex]
+    updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, data.facts.length, chars)
+  } else if (typewriter.mode === 'result' && resultSprite) {
+    updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length, chars)
+  }
+}
+
+function completeTypewriter() {
+  if (typewriter.active) {
+    typewriter.visibleChars = typewriter.fullText.length
+    typewriter.active = false
+    applyTypewriterFrame()
+  }
+}
 
 function showPlanetHopLogo() {
   if (!planetHopLogo) {
@@ -164,6 +209,9 @@ launchBtn.addEventListener("click", (event) => {
   // Show Planet Hop logo for 3D scenes
   showPlanetHopLogo()
   
+  // Start typewriter for the first intro page
+  startTypewriter(introBodyTexts[introTextState], 'intro')
+  
   // Don't load the planet yet - wait for user click
   
   gameStarted = true
@@ -198,8 +246,11 @@ window.addEventListener("click", (event) => {
       const clickY = (1 - uv.y) * canvasHeight
       
       // Check if clicked on navigation buttons (now at bottom)
-      const backButtonArea = { x: 50, y: canvasHeight - 150, width: 100, height: 100 }
-      const forwardButtonArea = { x: canvasWidth - 150, y: canvasHeight - 150, width: 100, height: 100 }
+      // New arrow positions (2x scaled, bottomY = height - 160 = 1120)
+      // Back arrow: x=160→280, y=1040→1200
+      // Forward arrow: x=2280→2400, y=1040→1200
+      const backButtonArea = { x: 160, y: 1040, width: 120, height: 160 }
+      const forwardButtonArea = { x: canvasWidth - 280, y: 1040, width: 120, height: 160 }
       
       const inBackButton = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
                           clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
@@ -208,18 +259,27 @@ window.addEventListener("click", (event) => {
                              clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
       
       if (inBackButton && introTextState > 0) {
-        // Go back to first state
+        // Go back to first state — always navigate immediately
+        backSound.play()
         introTextState = 0
-        updateInteractiveIntroText(introText, introTextState)
+        typewriter.active = false
+        updateInteractiveIntroText(introText, introTextState, 0)
+        startTypewriter(introBodyTexts[introTextState], 'intro')
         console.log('Navigated back to state:', introTextState)
       } else if (inForwardButton) {
-        if (introTextState < 2) {
+        forwardSound.play()
+        if (typewriter.active) {
+          // First click while typing: skip to full text
+          completeTypewriter()
+        } else if (introTextState < 2) {
           // Go forward to next state
           introTextState++
-          updateInteractiveIntroText(introText, introTextState)
+          updateInteractiveIntroText(introText, introTextState, 0)
+          startTypewriter(introBodyTexts[introTextState], 'intro')
           console.log('Navigated forward to state:', introTextState)
         } else {
           // On final state, remove intro text and show planets
+          typewriter.active = false
           scene.remove(introText)
           introText = null
           
@@ -284,9 +344,11 @@ window.addEventListener("click", (event) => {
                         clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
 
       if (inForward && resultMessageIndex < resultMessages.length - 1) {
+        forwardSound.play()
         resultMessageIndex++
         updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
       } else if (inBack && resultMessageIndex > 0) {
+        backSound.play()
         resultMessageIndex--
         updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
       }
@@ -319,18 +381,23 @@ window.addEventListener("click", (event) => {
 
       if (inForward) {
         if (currentFactIndex < totalFacts - 1) {
-          // Show next fact for same planet
+          // Not on last fact — show next fact silently
           currentFactIndex++
           updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
         } else if (currentIndex < planets.length - 1) {
-          // All facts seen — advance to next planet
+          // Last fact of this planet — advance to next planet (play sound)
+          forwardSound.play()
           currentIndex++
           loadPlanet(currentIndex, 0)
         } else {
-          // Last fact of last planet — show planet selection screen
+          // Last fact of last planet — show planet selection screen (play sound)
+          forwardSound.play()
           showPlanetSelection()
         }
       } else if (inBack) {
+        if (currentFactIndex > 0 || currentIndex > 0) {
+          backSound.play()
+        }
         if (currentFactIndex > 0) {
           // Go to previous fact on same planet
           currentFactIndex--
@@ -356,6 +423,18 @@ renderer.setAnimationLoop(() => {
   farStars.rotation.y += 0.0002
   distantStars.rotation.y += 0.0001
   milkyWaySphere.rotation.y += 0.00005
+
+  // --- Typewriter animation ---
+  if (typewriter.active) {
+    typewriter.visibleChars = Math.min(
+      typewriter.visibleChars + typewriter.charsPerFrame,
+      typewriter.fullText.length
+    )
+    applyTypewriterFrame()
+    if (typewriter.visibleChars >= typewriter.fullText.length) {
+      typewriter.active = false
+    }
+  }
 
   renderer.render(scene, camera)
 })

@@ -45,7 +45,7 @@ export function createTextSprite(message) {
   return sprite
 }
 
-function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts) {
+function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts, visibleChars = Infinity) {
   // Draw background box with 60% opacity
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
@@ -67,7 +67,8 @@ function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, f
   const maxWidth = canvas.width - 100
   const fontSize = 60
   const lineHeight = fontSize * 1.2
-  drawWrappedText(context, factText, canvas.width / 2, 220, maxWidth, fontSize, lineHeight)
+  const displayFactText = Number.isFinite(visibleChars) ? factText.slice(0, visibleChars) : factText
+  drawWrappedText(context, displayFactText, canvas.width / 2, 220, maxWidth, fontSize, lineHeight)
 
   // Draw page indicator dots (e.g. ● ● ○)
   const dotRadius = 16
@@ -104,14 +105,14 @@ function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, f
   context.fill()
 }
 
-export function createFactTextBox(factText, planetName = "Planet Fact", planetIndex = 0, factIndex = 0, totalFacts = 3) {
+export function createFactTextBox(factText, planetName = "Planet Fact", planetIndex = 0, factIndex = 0, totalFacts = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
 
   canvas.width = 1280
   canvas.height = 720
 
-  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts)
+  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts, visibleChars)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -138,14 +139,14 @@ export function createFactTextBox(factText, planetName = "Planet Fact", planetIn
   return sprite
 }
 
-export function updateFactTextBox(sprite, factText, planetName, planetIndex, factIndex, totalFacts = 3) {
+export function updateFactTextBox(sprite, factText, planetName, planetIndex, factIndex, totalFacts = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
 
   canvas.width = 1280
   canvas.height = 720
 
-  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts)
+  drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, factIndex, totalFacts, visibleChars)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -272,16 +273,17 @@ export function createPlanetHopLogo() {
   return sprite
 }
 
-function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages) {
+function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars = Infinity) {
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
   context.strokeStyle = "lightblue"
   context.lineWidth = 6
   context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
 
+  const displayResultText = Number.isFinite(visibleChars) ? text.slice(0, visibleChars) : text
   context.fillStyle = "lightblue"
   context.textAlign = "center"
-  drawWrappedText(context, text, canvas.width / 2, 200, canvas.width - 200, 60, 72)
+  drawWrappedText(context, displayResultText, canvas.width / 2, 200, canvas.width - 200, 60, 72)
 
   // Page indicator dots
   const dotRadius = 16
@@ -316,13 +318,13 @@ function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages)
   context.fill()
 }
 
-export function createResultBox(text, messageIndex = 0, totalMessages = 3) {
+export function createResultBox(text, messageIndex = 0, totalMessages = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 1920
   canvas.height = 720
 
-  drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages)
+  drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -345,13 +347,13 @@ export function createResultBox(text, messageIndex = 0, totalMessages = 3) {
   return sprite
 }
 
-export function updateResultBox(sprite, text, messageIndex, totalMessages = 3) {
+export function updateResultBox(sprite, text, messageIndex, totalMessages = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 1920
   canvas.height = 720
 
-  drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages)
+  drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -359,7 +361,7 @@ export function updateResultBox(sprite, text, messageIndex, totalMessages = 3) {
   sprite.material.needsUpdate = true
 }
 
-export function createInteractiveIntroText(textState = 0) {
+export function createInteractiveIntroText(textState = 0, visibleChars = 0) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
 
@@ -377,7 +379,7 @@ export function createInteractiveIntroText(textState = 0) {
 
   // Draw title (always present) - ONE THAT ACTUALLY WORKS
   context.fillStyle = "lightblue"
-  context.font = "bold 100px 'Space Grotesk', sans-serif"
+  context.font = "bold 120px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
   context.fillText("🚨 ALERT", canvas.width / 2, 200)
   context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
@@ -390,27 +392,30 @@ export function createInteractiveIntroText(textState = 0) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
     // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
+    const displayIntroText0 = Number.isFinite(visibleChars) ? longText.slice(0, visibleChars) : longText
     const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
     const fontSize = 120
     const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
-    drawWrappedText(context, longText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayIntroText0, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
+    const displayIntroText1 = Number.isFinite(visibleChars) ? climateText.slice(0, visibleChars) : climateText
     const maxWidth = canvas.width - 400 // Leave some padding
     const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, climateText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayIntroText1, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger...and we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const missionText = "Earth is in danger. Explore space to find a new home. Your mission begins now!"
+    const displayIntroText2 = Number.isFinite(visibleChars) ? missionText.slice(0, visibleChars) : missionText
     const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
     const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, missionText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayIntroText2, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons
@@ -431,38 +436,44 @@ export function createInteractiveIntroText(textState = 0) {
   sprite.scale.set(18, 9, 1)
   
   // Store state information on the sprite for interaction
+  // bottomY = canvas.height - 160 = 1120, arrows centered at that y
+  // Back arrow: x=160→280 (120px wide), y=1120 ± 80 (160px tall)
+  // Forward arrow: x=(width-280)→(width-160), same y
   sprite.userData = { 
     textState: textState,
     isInteractive: true,
-    backButtonArea: { x: 50, y: canvas.height / 2, width: 100, height: 100 },
-    forwardButtonArea: { x: canvas.width - 150, y: canvas.height / 2, width: 100, height: 100 }
+    backButtonArea: { x: 160, y: 1040, width: 120, height: 160 },
+    forwardButtonArea: { x: canvas.width - 280, y: 1040, width: 120, height: 160 }
   }
 
   return sprite
 }
 
 function drawNavigationButtons(context, width, height, textState) {
-  const buttonSize = 80
-  const bottomY = height - 100  // Position at bottom of text box
+  // Scale factor: canvas is 2560 wide vs 1280 for planet pages (2x scale)
+  // Planet arrows: buttonSize=80, x positions 80→140 (60px wide)
+  // Here scaled 2x: buttonSize=160, x positions 160→280 (120px wide)
+  const buttonSize = 160
+  const bottomY = height - 160  // Position at bottom of text box
   
-  // Back button (left) - arrow pointing left
+  // Back button (left) - arrow pointing left (same style as planet pages, 2x scaled)
   context.fillStyle = textState === 0 ? "rgba(255, 255, 255, 0.3)" : "lightblue"
   context.beginPath()
-  context.moveTo(140, bottomY - buttonSize/2)
-  context.lineTo(80, bottomY)
-  context.lineTo(140, bottomY + buttonSize/2)
+  context.moveTo(280, bottomY - buttonSize / 2)
+  context.lineTo(160, bottomY)
+  context.lineTo(280, bottomY + buttonSize / 2)
   context.fill()
   
-  // Forward button (right) - arrow pointing right
+  // Forward button (right) - arrow pointing right (same style as planet pages, 2x scaled)
   context.fillStyle = "lightblue"
   context.beginPath()
-  context.moveTo(width - 140, bottomY - buttonSize/2)
-  context.lineTo(width - 80, bottomY)
-  context.lineTo(width - 140, bottomY + buttonSize/2)
+  context.moveTo(width - 280, bottomY - buttonSize / 2)
+  context.lineTo(width - 160, bottomY)
+  context.lineTo(width - 280, bottomY + buttonSize / 2)
   context.fill()
 }
 
-export function updateInteractiveIntroText(sprite, textState) {
+export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity) {
   // Update the sprite's text state and recreate the texture
   sprite.userData.textState = textState
   
@@ -483,7 +494,7 @@ export function updateInteractiveIntroText(sprite, textState) {
 
   // Draw title (always present)
   context.fillStyle = "lightblue"
-  context.font = "bold 100px 'Space Grotesk', sans-serif"
+  context.font = "bold 120px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
   context.fillText("🚨 ALERT", canvas.width / 2, 200)
   context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
@@ -496,27 +507,30 @@ export function updateInteractiveIntroText(sprite, textState) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
     // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
+    const displayUpdateText0 = Number.isFinite(visibleChars) ? longText.slice(0, visibleChars) : longText
     const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
     const fontSize = 120
     const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
-    drawWrappedText(context, longText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayUpdateText0, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
+    const displayUpdateText1 = Number.isFinite(visibleChars) ? climateText.slice(0, visibleChars) : climateText
     const maxWidth = canvas.width - 400 // Leave some padding
     const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, climateText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayUpdateText1, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger...and we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const missionText = "Earth is in danger. Explore space to find a new home. Your mission begins now!"
+    const displayUpdateText2 = Number.isFinite(visibleChars) ? missionText.slice(0, visibleChars) : missionText
     const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
     const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, missionText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, displayUpdateText2, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -14,6 +14,60 @@ let currentIndex = 0
 let currentFactIndex = 0
 let currentPlanet
 let currentText
+
+// Selection screen state
+let selectionMode = false
+let selectionPlanets = []
+let selectionNameLabels = []
+let selectionMessageSprite = null
+let resultSprite = null
+let resultMessages = []
+let resultMessageIndex = 0
+
+function showPlanetSelection() {
+  // Clear current planet and text
+  if (currentPlanet) { scene.remove(currentPlanet); currentPlanet = null }
+  if (currentText) { scene.remove(currentText); currentText = null }
+
+  // Zoom camera out to see all planets
+  camera.position.set(0, 1.6, 13)
+  controls.target.set(0, 0, 0)
+  controls.update()
+
+  // Show selection message
+  selectionMessageSprite = createSelectionMessageBox()
+  selectionMessageSprite.position.set(0, 3.5, 0)
+  scene.add(selectionMessageSprite)
+
+  // Lay out all planets in a row
+  const spacing = 2.5
+  const startX = -(planets.length - 1) * spacing / 2
+
+  planets.forEach((planetData, i) => {
+    const planet = createPlanet(planetData)
+    planet.position.set(startX + i * spacing, 0, 0)
+    planet.scale.set(0.65, 0.65, 0.65)
+    planet.userData = { planetName: planetData.name, planetData }
+    scene.add(planet)
+    selectionPlanets.push(planet)
+
+    const label = createNameLabel(planetData.name)
+    label.position.set(startX + i * spacing, -1.3, 0)
+    scene.add(label)
+    selectionNameLabels.push(label)
+  })
+
+  selectionMode = true
+}
+
+function clearSelectionScreen() {
+  if (selectionMessageSprite) { scene.remove(selectionMessageSprite); selectionMessageSprite = null }
+  selectionPlanets.forEach(p => scene.remove(p))
+  selectionNameLabels.forEach(l => scene.remove(l))
+  selectionPlanets = []
+  selectionNameLabels = []
+  selectionMode = false
+}
 
 function loadPlanet(index, factIndex = 0) {
   if (currentPlanet) {
@@ -150,6 +204,64 @@ window.addEventListener("click", (event) => {
       }
       // If clicked on main text area, do nothing (keep current state)
     }
+  } else if (gameStarted && selectionMode) {
+    // Handle planet selection click
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera(mouse, camera)
+
+    const intersects = raycaster.intersectObjects(selectionPlanets)
+    if (intersects.length > 0) {
+      const clicked = intersects[0].object
+      const { planetName, planetData } = clicked.userData
+
+      clearSelectionScreen()
+
+      // Build 3-message result sequence
+      const firstMessage = planetName === 'Mars'
+        ? "Correct! Humans may be able to live on Mars but only with technology and protection!"
+        : planetData.facts[2]
+
+      resultMessages = [
+        firstMessage,
+        "Now, the real mission is protecting Earth. Earth is our best home. It has Liquid water, Oxygen, Forests, Animals, A protective atmosphere.",
+        "We need to work together to cool the planet and protect our future. You can help by: 🌳 Planting trees, ⚡ Using clean energy, 🚲 Riding bikes or walking, ♻️ Reducing waste, 💡 Saving electricity. This is called Climate Action."
+      ]
+      resultMessageIndex = 0
+
+      resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
+      resultSprite.position.set(0, 0, 0)
+      scene.add(resultSprite)
+    }
+  } else if (gameStarted && resultSprite) {
+    // Navigate result messages via arrows
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    raycaster.setFromCamera(mouse, camera)
+
+    const intersects = raycaster.intersectObject(resultSprite)
+    if (intersects.length > 0) {
+      const uv = intersects[0].uv
+      const canvasWidth = 1920
+      const canvasHeight = 720
+      const clickX = uv.x * canvasWidth
+      const clickY = (1 - uv.y) * canvasHeight
+
+      const { backButtonArea, forwardButtonArea } = resultSprite.userData
+
+      const inBack = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
+                     clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
+      const inForward = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
+                        clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
+
+      if (inForward && resultMessageIndex < resultMessages.length - 1) {
+        resultMessageIndex++
+        updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+      } else if (inBack && resultMessageIndex > 0) {
+        resultMessageIndex--
+        updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+      }
+    }
   } else if (gameStarted && currentText) {
     // Navigate planets via arrows on the fact text box
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1
@@ -185,6 +297,9 @@ window.addEventListener("click", (event) => {
           // All facts seen — advance to next planet
           currentIndex++
           loadPlanet(currentIndex, 0)
+        } else {
+          // Last fact of last planet — show planet selection screen
+          showPlanetSelection()
         }
       } else if (inBack) {
         if (currentFactIndex > 0) {
@@ -204,6 +319,7 @@ window.addEventListener("click", (event) => {
 
 renderer.setAnimationLoop(() => {
   if (currentPlanet) currentPlanet.rotation.y += 0.003
+  selectionPlanets.forEach(p => p.rotation.y += 0.005)
   controls.update()
 
   // --- subtle rotation for motion ---

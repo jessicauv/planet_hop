@@ -20,7 +20,11 @@ export function createScene() {
   renderer.physicallyCorrectLights = true
 
   document.body.appendChild(renderer.domElement)
-  document.body.appendChild(VRButton.createButton(renderer))
+  
+  // Only show VR button if WebXR is supported
+  if (navigator.xr) {
+    document.body.appendChild(VRButton.createButton(renderer))
+  }
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight

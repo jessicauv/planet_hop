@@ -45,6 +45,61 @@ export function createTextSprite(message) {
   return sprite
 }
 
+export function createFactTextBox(factText) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  canvas.width = 1280
+  canvas.height = 720
+
+  // Draw background box with 60% opacity
+  context.fillStyle = "rgba(0, 0, 128, 0.6)"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  
+  // Draw border
+  context.strokeStyle = "lightblue"
+  context.lineWidth = 6
+  context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
+
+  // Draw title
+  context.fillStyle = "lightblue"
+  context.font = "bold 80px 'Space Grotesk', sans-serif"
+  context.textAlign = "center"
+  context.fillText("Planet Fact", canvas.width / 2, 100)
+
+  // Draw fact text with wrapping
+  context.fillStyle = "lightblue"
+  context.font = "60px 'Space Grotesk', sans-serif"
+  
+  const maxWidth = canvas.width - 100
+  const fontSize = 60
+  const lineHeight = fontSize * 1.2
+  
+  drawWrappedText(context, factText, canvas.width / 2, 220, maxWidth, fontSize, lineHeight)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+
+  const material = new THREE.SpriteMaterial({ 
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.NormalBlending,
+    side: THREE.DoubleSide
+  })
+  const sprite = new THREE.Sprite(material)
+  sprite.scale.set(9, 5, 1)
+  
+  // Store fact information on the sprite
+  sprite.userData = { 
+    isFactBox: true,
+    factText: factText
+  }
+
+  return sprite
+}
+
 export function createInteractiveIntroText(textState = 0) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
@@ -65,8 +120,8 @@ export function createInteractiveIntroText(textState = 0) {
   context.fillStyle = "lightblue"
   context.font = "bold 100px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText("🚨 ALERT", canvas.width / 2, 120)
-  context.fillText("Earth has been badly damaged", canvas.width / 2, 260)
+  context.fillText("🚨 ALERT", canvas.width / 2, 200)
+  context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
 
   // Draw body text based on state
   context.fillStyle = "lightblue"
@@ -171,8 +226,8 @@ export function updateInteractiveIntroText(sprite, textState) {
   context.fillStyle = "lightblue"
   context.font = "bold 100px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText("🚨 ALERT", canvas.width / 2, 120)
-  context.fillText("Earth has been badly damaged", canvas.width / 2, 260)
+  context.fillText("🚨 ALERT", canvas.width / 2, 200)
+  context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
 
   // Draw body text based on state
   context.fillStyle = "lightblue"

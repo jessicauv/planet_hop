@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -22,11 +22,14 @@ function loadPlanet(index) {
 
   const data = planets[index]
   currentPlanet = createPlanet(data)
-  currentPlanet.position.set(-2, 1.6, 0)  // Move planet to left side (x=-2)
+  currentPlanet.position.set(-2, 0, 0)  // Moved down to be fully in screen
+  currentPlanet.scale.set(2.2, 2.2, 2.2)  // Bigger planet, fully inside screen
   scene.add(currentPlanet)
 
-  currentText = createTextSprite(data.fact)
-  currentText.position.set(2, 1.6, 0)  // Move text to right side (x=2)
+  // Create fact text in a styled textbox similar to intro text
+  currentText = createFactTextBox(data.fact)
+  currentText.position.set(4, 0, 0)    // Right side, same y as planet
+  currentText.scale.set(5.33, 3, 1)        // Keep textbox size
   scene.add(currentText)
 }
 
@@ -73,7 +76,7 @@ launchBtn.addEventListener("click", (event) => {
   console.log('Intro text map:', introText.material.map)
   
   // Position intro text properly in camera view
-  introText.position.set(0, 1.6, -1.5)  // Move closer to camera for better visibility
+  introText.position.set(0, 0.8, -1.5)  // Move closer to camera for better visibility
   introText.scale.set(8, 4, 1)          // Set appropriate scale for the scene
   scene.add(introText)
   console.log('Interactive intro text added to scene at position:', introText.position)

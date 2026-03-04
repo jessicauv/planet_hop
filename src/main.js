@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createIntroText } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -36,8 +36,10 @@ const launchBtn = document.getElementById("launchBtn")
 let gameStarted = false
 let spaceAudio
 let introText
+let introTextState = 0
 
-launchBtn.addEventListener("click", () => {
+launchBtn.addEventListener("click", (event) => {
+  event.stopPropagation()  // Prevent click from bubbling up to window click handler
   console.log('Launch button clicked')
   introScreen.style.opacity = "0"
   setTimeout(() => {
@@ -64,32 +66,87 @@ launchBtn.addEventListener("click", () => {
   console.log('Audio play method called')
   
   // Show intro text before showing planets
-  introText = createIntroText()
-  introText.position.set(0, 1.6, 0)
+  console.log('Creating interactive intro text...')
+  introText = createInteractiveIntroText(introTextState)
+  console.log('Interactive intro text created:', introText)
+  console.log('Intro text material:', introText.material)
+  console.log('Intro text map:', introText.material.map)
+  
+  // Position intro text properly in camera view
+  introText.position.set(0, 1.6, -1.5)  // Move closer to camera for better visibility
+  introText.scale.set(8, 4, 1)          // Set appropriate scale for the scene
   scene.add(introText)
+  console.log('Interactive intro text added to scene at position:', introText.position)
   
   // Don't load the planet yet - wait for user click
   
   gameStarted = true
 })
 
-// Click to move to next planet - only after game has started
-window.addEventListener("click", () => {
-  if (gameStarted) {
-    // Remove intro text if it exists and show first planet
-    if (introText) {
+// Raycaster for interactive text navigation
+const raycaster = new THREE.Raycaster()
+const mouse = new THREE.Vector2()
+
+// Click to interact with intro text or move to next planet - only after game has started
+window.addEventListener("click", (event) => {
+  if (gameStarted && introText) {
+    // Calculate mouse position in normalized device coordinates
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+    
+    // Update the picking ray with the camera and mouse position
+    raycaster.setFromCamera(mouse, camera)
+    
+    // Calculate objects intersecting the picking ray
+    const intersects = raycaster.intersectObject(introText)
+    
+    if (intersects.length > 0) {
+      // User clicked on the intro text
+      const intersection = intersects[0]
+      const uv = intersection.uv
+      
+      // Convert UV coordinates to canvas coordinates
+      const canvasWidth = 2560
+      const canvasHeight = 1280
+      const clickX = uv.x * canvasWidth
+      const clickY = (1 - uv.y) * canvasHeight
+      
+      // Check if clicked on navigation buttons (now at bottom)
+      const backButtonArea = { x: 50, y: canvasHeight - 150, width: 100, height: 100 }
+      const forwardButtonArea = { x: canvasWidth - 150, y: canvasHeight - 150, width: 100, height: 100 }
+      
+      const inBackButton = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
+                          clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
+      
+      const inForwardButton = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
+                             clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
+      
+      if (inBackButton && introTextState > 0) {
+        // Go back to first state
+        introTextState = 0
+        updateInteractiveIntroText(introText, introTextState)
+        console.log('Navigated back to state:', introTextState)
+      } else if (inForwardButton && introTextState < 1) {
+        // Go forward to second state
+        introTextState = 1
+        updateInteractiveIntroText(introText, introTextState)
+        console.log('Navigated forward to state:', introTextState)
+      }
+      // If clicked on main text area, do nothing (keep current state)
+    } else {
+      // User clicked outside intro text - proceed to planets
       scene.remove(introText)
       introText = null
       
       // Now show the first planet (Sun)
       currentIndex = 0
       loadPlanet(currentIndex)
-    } else {
-      // Normal navigation between planets
-      currentIndex++
-      if (currentIndex >= planets.length) currentIndex = 0
-      loadPlanet(currentIndex)
     }
+  } else if (gameStarted) {
+    // Normal navigation between planets
+    currentIndex++
+    if (currentIndex >= planets.length) currentIndex = 0
+    loadPlanet(currentIndex)
   }
 })
 

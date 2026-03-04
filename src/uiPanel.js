@@ -215,6 +215,63 @@ export function createNameLabel(name) {
   return sprite
 }
 
+export function createPlanetHopLogo() {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  canvas.width = 1024
+  canvas.height = 256
+
+  // Set smaller font size for all text
+  const fontSize = 50
+  context.font = `bold ${fontSize}px 'Press Start 2P', cursive`
+  context.textAlign = "left"
+  context.fillStyle = "lightblue"
+  context.shadowColor = "rgba(0, 100, 255, 0.5)"
+  context.shadowBlur = 10
+
+  // Calculate positions based on text width for proper spacing
+  const planetWidth = context.measureText("PLANET").width
+  const dotWidth = context.measureText(".").width
+  const hopWidth = context.measureText("HOP").width
+  
+  // Starting position
+  let currentX = 40
+  const y = 160
+
+  // Draw "Planet" text
+  context.fillText("PLANET", currentX, y)
+  currentX += planetWidth + 5 // Minimal gap
+
+  // Draw "." with enhanced glow
+  context.shadowColor = "rgba(0, 100, 255, 0.8)"
+  context.shadowBlur = 15
+  context.fillText(".", currentX, y)
+  currentX += dotWidth + 5 // Minimal gap
+
+  // Draw "Hop" text
+  context.shadowColor = "rgba(0, 100, 255, 0.5)"
+  context.shadowBlur = 10
+  context.fillText("HOP", currentX, y)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.NormalBlending
+  })
+  const sprite = new THREE.Sprite(material)
+  sprite.scale.set(4, 1, 1)
+  
+  // Store logo information
+  sprite.userData = { isPlanetHopLogo: true }
+  
+  return sprite
+}
+
 function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages) {
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
@@ -333,27 +390,27 @@ export function createInteractiveIntroText(textState = 0) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
     // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const maxWidth = canvas.width - 300 // Reduce padding to make text more squished
-    const fontSize = 72
+    const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
+    const fontSize = 120
     const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
-    drawWrappedText(context, longText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, longText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
-    const maxWidth = canvas.width - 300 // Leave some padding
-    const fontSize = 48
+    const maxWidth = canvas.width - 400 // Leave some padding
+    const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, climateText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger… And we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
-    const maxWidth = canvas.width - 300 // More padding to match visual appearance of climateText
-    const fontSize = 48
+    const missionText = "Now Earth is in danger...and we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
+    const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, missionText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, missionText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons
@@ -439,27 +496,27 @@ export function updateInteractiveIntroText(sprite, textState) {
     // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
     // Wrap long text into multiple lines with tighter spacing
     const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const maxWidth = canvas.width - 200 // Reduce padding to make text more squished
-    const fontSize = 72
+    const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
+    const fontSize = 120
     const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
     
-    drawWrappedText(context, longText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, longText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else if (textState === 1) {
     // Second state: Climate change message
     const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
-    const maxWidth = canvas.width - 100 // Leave some padding
-    const fontSize = 72
+    const maxWidth = canvas.width - 400 // Leave some padding
+    const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, climateText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, climateText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   } else {
     // Third state: Mission message
-    const missionText = "Now Earth is in danger… And we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
-    const maxWidth = canvas.width - 300 // More padding to match visual appearance of climateText
-    const fontSize = 72
+    const missionText = "Now Earth is in danger...and we must explore space to see if another planet could be our new home. Explorer, your mission begins now!"
+    const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
+    const fontSize = 120
     const lineHeight = fontSize * 1.2
     
-    drawWrappedText(context, missionText, canvas.width / 2, 480, maxWidth, fontSize, lineHeight)
+    drawWrappedText(context, missionText, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
   }
 
   // Draw navigation buttons

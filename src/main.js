@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -23,8 +23,28 @@ let selectionMessageSprite = null
 let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
+let planetHopLogo = null
+
+function showPlanetHopLogo() {
+  if (!planetHopLogo) {
+    planetHopLogo = createPlanetHopLogo()
+    // Position in top-left corner of camera view
+    planetHopLogo.position.set(-4.0, 3.0, 0)
+    scene.add(planetHopLogo)
+  }
+}
+
+function hidePlanetHopLogo() {
+  if (planetHopLogo) {
+    scene.remove(planetHopLogo)
+    planetHopLogo = null
+  }
+}
 
 function showPlanetSelection() {
+  // Hide Planet Hop logo for selection screen
+  hidePlanetHopLogo()
+  
   // Clear current planet and text
   if (currentPlanet) { scene.remove(currentPlanet); currentPlanet = null }
   if (currentText) { scene.remove(currentText); currentText = null }
@@ -88,6 +108,9 @@ function loadPlanet(index, factIndex = 0) {
   currentText.position.set(4, 0, 0)
   currentText.scale.set(5.33, 3, 1)
   scene.add(currentText)
+  
+  // Show Planet Hop logo for planet fact screens
+  showPlanetHopLogo()
 }
 
 const introScreen = document.getElementById("introScreen")
@@ -137,6 +160,9 @@ launchBtn.addEventListener("click", (event) => {
   introText.scale.set(8, 4, 1)          // Set appropriate scale for the scene
   scene.add(introText)
   console.log('Interactive intro text added to scene at position:', introText.position)
+  
+  // Show Planet Hop logo for 3D scenes
+  showPlanetHopLogo()
   
   // Don't load the planet yet - wait for user click
   
@@ -232,6 +258,9 @@ window.addEventListener("click", (event) => {
       resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
       resultSprite.position.set(0, 0, 0)
       scene.add(resultSprite)
+      
+      // Show Planet Hop logo for result screens
+      showPlanetHopLogo()
     }
   } else if (gameStarted && resultSprite) {
     // Navigate result messages via arrows

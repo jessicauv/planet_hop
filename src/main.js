@@ -7,9 +7,18 @@ import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroTex
 
 const forwardSound = new Howl({ src: ['/audio/front_arrow.ogg'] })
 const backSound = new Howl({ src: ['/audio/back_arrow.ogg'] })
+const resultSound = new Howl({ src: ['/audio/result.ogg'] })
 
 
-const { scene, camera, renderer, controls } = createScene()
+const { scene, camera, renderer, controls, vrButton } = createScene()
+
+// Disable OrbitControls while in VR (headset drives the camera), re-enable on exit
+renderer.xr.addEventListener('sessionstart', () => {
+  controls.enabled = false
+})
+renderer.xr.addEventListener('sessionend', () => {
+  controls.enabled = true
+})
 
 // Create stars + Milky Way - this will be visible throughout the entire experience
 const { milkyWaySphere, closeStars, farStars, distantStars } = createStarfield(scene)
@@ -68,6 +77,29 @@ function completeTypewriter() {
     typewriter.active = false
     applyTypewriterFrame()
   }
+}
+
+// ─── Planet warp-zoom transition ────────────────────────────────────────────
+const WARP_FRAMES = 22  // frames per phase (~0.37s at 60fps)
+
+const planetTransition = {
+  active: false,
+  phase: null,      // 'out' | 'in'
+  progress: 0,
+  outPlanet: null,
+  inData: null      // { index, factIndex }
+}
+
+function setGroupOpacity(group, opacity) {
+  group.traverse(child => {
+    if (child.isMesh && child.material) {
+      // Respect each mesh's intended base opacity (e.g. glow spheres at 0.09)
+      const base = child.userData.baseOpacity !== undefined ? child.userData.baseOpacity : 1
+      child.material.transparent = true
+      child.material.opacity = base * opacity
+      child.material.needsUpdate = true
+    }
+  })
 }
 
 function showPlanetHopLogo() {
@@ -134,28 +166,45 @@ function clearSelectionScreen() {
   selectionMode = false
 }
 
-function loadPlanet(index, factIndex = 0) {
-  if (currentPlanet) {
-    scene.remove(currentPlanet)
-    scene.remove(currentText)
-  }
-
+function loadPlanetInstant(index, factIndex = 0) {
   currentFactIndex = factIndex
-
   const data = planets[index]
+
   currentPlanet = createPlanet(data)
   currentPlanet.position.set(-2, 0, 0)
   currentPlanet.scale.set(2.2, 2.2, 2.2)
   scene.add(currentPlanet)
 
-  // Create fact text box showing the first fact
   currentText = createFactTextBox(data.facts[factIndex], data.name, index, factIndex, data.facts.length)
   currentText.position.set(4, 0, 0)
   currentText.scale.set(5.33, 3, 1)
   scene.add(currentText)
-  
-  // Show Planet Hop logo for planet fact screens
+
   showPlanetHopLogo()
+}
+
+function loadPlanet(index, factIndex = 0) {
+  if (currentPlanet) {
+    // Hide text immediately; keep old planet for warp-out animation
+    if (currentText) { scene.remove(currentText); currentText = null }
+
+    planetTransition.active = true
+    planetTransition.phase = 'out'
+    planetTransition.progress = 0
+    planetTransition.outPlanet = currentPlanet
+    planetTransition.inData = { index, factIndex }
+    currentPlanet = null
+  } else {
+    // First planet — load instantly then warp in
+    loadPlanetInstant(index, factIndex)
+    currentPlanet.scale.setScalar(0.1)
+    setGroupOpacity(currentPlanet, 0)
+    currentText.visible = false
+
+    planetTransition.active = true
+    planetTransition.phase = 'in'
+    planetTransition.progress = 0
+  }
 }
 
 const introScreen = document.getElementById("introScreen")
@@ -248,6 +297,11 @@ launchBtn.addEventListener("click", (event) => {
   volumeBtn.style.alignItems = 'center'
   volumeBtn.style.justifyContent = 'center'
 
+  // Show VR button if WebXR is available
+  if (vrButton) {
+    vrButton.style.display = 'block'
+  }
+
   // Start typewriter for the first intro page
   startTypewriter(introBodyTexts[introTextState], 'intro')
   
@@ -335,10 +389,15 @@ window.addEventListener("click", (event) => {
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
     raycaster.setFromCamera(mouse, camera)
 
-    const intersects = raycaster.intersectObjects(selectionPlanets)
+    const intersects = raycaster.intersectObjects(selectionPlanets, true)
     if (intersects.length > 0) {
-      const clicked = intersects[0].object
-      const { planetName, planetData } = clicked.userData
+      // Walk up hierarchy to find the group that has planetName userData
+      let root = intersects[0].object
+      while (root && !root.userData.planetName) {
+        root = root.parent
+      }
+      if (!root) return
+      const { planetName, planetData } = root.userData
 
       clearSelectionScreen()
 
@@ -420,7 +479,10 @@ window.addEventListener("click", (event) => {
 
       if (inForward) {
         if (currentFactIndex < totalFacts - 1) {
-          // Not on last fact — show next fact silently
+          // Advancing to the last fact — play result sound; otherwise silent
+          if (currentFactIndex === totalFacts - 2) {
+            resultSound.play()
+          }
           currentFactIndex++
           updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
         } else if (currentIndex < planets.length - 1) {
@@ -454,6 +516,7 @@ window.addEventListener("click", (event) => {
 
 renderer.setAnimationLoop(() => {
   if (currentPlanet) currentPlanet.rotation.y += 0.003
+  if (planetTransition.outPlanet) planetTransition.outPlanet.rotation.y += 0.003
   selectionPlanets.forEach(p => p.rotation.y += 0.005)
   controls.update()
 
@@ -462,6 +525,49 @@ renderer.setAnimationLoop(() => {
   farStars.rotation.y += 0.0002
   distantStars.rotation.y += 0.0001
   milkyWaySphere.rotation.y += 0.00005
+
+  // --- Planet warp-zoom transition ---
+  if (planetTransition.active) {
+    planetTransition.progress += 1 / WARP_FRAMES
+    const t = Math.min(planetTransition.progress, 1)
+
+    if (planetTransition.phase === 'out') {
+      // Scale up and fade out old planet
+      const scale = 2.2 + t * (14 - 2.2)
+      planetTransition.outPlanet.scale.setScalar(scale)
+      setGroupOpacity(planetTransition.outPlanet, 1 - t)
+
+      if (t >= 1) {
+        // Remove old planet and start warp-in with new planet
+        scene.remove(planetTransition.outPlanet)
+        planetTransition.outPlanet = null
+
+        const { index, factIndex } = planetTransition.inData
+        loadPlanetInstant(index, factIndex)
+
+        // Start new planet tiny and invisible
+        currentPlanet.scale.setScalar(0.1)
+        setGroupOpacity(currentPlanet, 0)
+        currentText.visible = false
+
+        planetTransition.phase = 'in'
+        planetTransition.progress = 0
+      }
+    } else if (planetTransition.phase === 'in') {
+      // Scale up and fade in new planet
+      const scale = 0.1 + t * (2.2 - 0.1)
+      currentPlanet.scale.setScalar(scale)
+      setGroupOpacity(currentPlanet, t)
+
+      if (t >= 1) {
+        currentPlanet.scale.set(2.2, 2.2, 2.2)
+        setGroupOpacity(currentPlanet, 1)
+        if (currentText) currentText.visible = true
+        planetTransition.active = false
+        planetTransition.phase = null
+      }
+    }
+  }
 
   // --- Typewriter animation ---
   if (typewriter.active) {

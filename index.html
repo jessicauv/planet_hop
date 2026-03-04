@@ -184,6 +184,15 @@
         display: none;
     }
 
+    /* Force VR button centering — overrides Three.js VRButton inline styles */
+    #vr-btn {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        text-align: center !important;
+        width: auto !important;
+        min-width: 160px;
+    }
+
     /* Fade to black scene transition */
     #scene-fade {
         position: fixed;

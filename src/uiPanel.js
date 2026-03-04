@@ -59,7 +59,7 @@ function drawFactBoxCanvas(context, canvas, factText, planetName, planetIndex, f
   context.fillStyle = "lightblue"
   context.font = "bold 80px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText(planetName, canvas.width / 2, 100)
+  context.fillText(planetName, canvas.width / 2, 130)
 
   // Draw fact text with wrapping
   context.fillStyle = "lightblue"
@@ -200,7 +200,7 @@ export function createNameLabel(name) {
   context.fillStyle = "lightblue"
   context.font = "bold 72px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText(name, canvas.width / 2, 90)
+  context.fillText(name, canvas.width / 2, 115)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true

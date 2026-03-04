@@ -22,9 +22,32 @@ export function createScene() {
 
   document.body.appendChild(renderer.domElement)
   
-  // Only show VR button if WebXR is supported
+  // VR button — styled to match space theme, hidden until game launches
+  let vrButton = null
   if (navigator.xr) {
-    document.body.appendChild(VRButton.createButton(renderer))
+    vrButton = VRButton.createButton(renderer)
+    vrButton.id = 'vr-btn'
+    // Override default inline styles to match the space aesthetic
+    vrButton.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-family: 'Space Grotesk', sans-serif;
+      letter-spacing: 1px;
+      background: rgba(0, 0, 40, 0.75);
+      color: lightblue;
+      border: 2px solid lightblue;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 30;
+      box-shadow: 0 0 12px rgba(100, 180, 255, 0.35);
+      transition: background 0.2s ease;
+    `
+    document.body.appendChild(vrButton)
   }
 
   window.addEventListener('resize', () => {
@@ -50,7 +73,7 @@ export function createScene() {
   sunLight.position.set(0, 1.6, -3) // near planet position
   scene.add(sunLight)
 
-  return { scene, camera, renderer, controls }
+  return { scene, camera, renderer, controls, vrButton }
 }
 
 // Function to create and play space audio

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite } from './uiPanel'
+import { createTextSprite, createIntroText } from './uiPanel'
 
 
 const { scene, camera, renderer, controls } = createScene()
@@ -22,11 +22,11 @@ function loadPlanet(index) {
 
   const data = planets[index]
   currentPlanet = createPlanet(data)
-  currentPlanet.position.set(0, 1.6, 0)  // Move planet to z=0 (closer to camera)
+  currentPlanet.position.set(-2, 1.6, 0)  // Move planet to left side (x=-2)
   scene.add(currentPlanet)
 
   currentText = createTextSprite(data.fact)
-  currentText.position.set(0, 3, 0)  // Move text to z=0 (closer to camera)
+  currentText.position.set(2, 1.6, 0)  // Move text to right side (x=2)
   scene.add(currentText)
 }
 
@@ -35,6 +35,7 @@ const launchBtn = document.getElementById("launchBtn")
 
 let gameStarted = false
 let spaceAudio
+let introText
 
 launchBtn.addEventListener("click", () => {
   console.log('Launch button clicked')
@@ -62,16 +63,33 @@ launchBtn.addEventListener("click", () => {
   spaceAudio.play()
   console.log('Audio play method called')
   
-  loadPlanet(currentIndex)
+  // Show intro text before showing planets
+  introText = createIntroText()
+  introText.position.set(0, 1.6, 0)
+  scene.add(introText)
+  
+  // Don't load the planet yet - wait for user click
+  
   gameStarted = true
 })
 
 // Click to move to next planet - only after game has started
 window.addEventListener("click", () => {
   if (gameStarted) {
-    currentIndex++
-    if (currentIndex >= planets.length) currentIndex = 0
-    loadPlanet(currentIndex)
+    // Remove intro text if it exists and show first planet
+    if (introText) {
+      scene.remove(introText)
+      introText = null
+      
+      // Now show the first planet (Sun)
+      currentIndex = 0
+      loadPlanet(currentIndex)
+    } else {
+      // Normal navigation between planets
+      currentIndex++
+      if (currentIndex >= planets.length) currentIndex = 0
+      loadPlanet(currentIndex)
+    }
   }
 })
 

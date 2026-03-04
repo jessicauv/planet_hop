@@ -144,9 +144,94 @@
         color: black;
         transform: scale(1.05);
     }
+
+    /* Volume toggle button */
+    #volume-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 30;
+        display: none;
+        background: rgba(0, 0, 40, 0.7);
+        border: 2px solid lightblue;
+        color: lightblue;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        cursor: pointer;
+        padding: 8px;
+        transition: background 0.2s ease, transform 0.1s ease;
+        box-shadow: 0 0 10px rgba(100, 180, 255, 0.3);
+    }
+
+    #volume-btn img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+    }
+
+    #volume-btn:hover {
+        background: rgba(0, 50, 120, 0.85);
+        transform: scale(1.1);
+    }
+
+    #volume-btn:active {
+        transform: scale(0.95);
+    }
+
+    #volume-btn::before {
+        display: none;
+    }
+
+    /* Fade to black scene transition */
+    #scene-fade {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: black;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 40;
+        transition: opacity 0.5s ease;
+    }
+
+    #scene-fade.black {
+        opacity: 1;
+    }
+
+    /* Hyperspace launch transition */
+    #hyperspace {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        z-index: 50;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(ellipse at center,
+            #ffffff 0%,
+            #aaddff 12%,
+            #2266ee 35%,
+            #000820 65%,
+            #000000 100%
+        );
+        transform-origin: center center;
+    }
+
+    #hyperspace.active {
+        animation: hyperspace-flash 0.9s ease-out forwards;
+    }
+
+    @keyframes hyperspace-flash {
+        0%   { opacity: 0;   transform: scale(0.05); }
+        18%  { opacity: 1;   transform: scale(1); }
+        55%  { opacity: 0.85; transform: scale(1.3); }
+        100% { opacity: 0;   transform: scale(2.5); }
+    }
   </style>
 </head>
 <body>
+  <button id="volume-btn" title="Toggle sound"><img src="/textures/audio_on.png" alt="Sound on" /></button>
+  <div id="scene-fade"></div>
+  <div id="hyperspace"></div>
   <div id="introScreen">
     <div class="intro-content">
         <div class="intro-text">

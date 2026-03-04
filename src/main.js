@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { Howl } from 'howler'
+import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
@@ -166,9 +166,43 @@ let spaceAudio
 let introText
 let introTextState = 0
 
+const hyperspaceEl = document.getElementById('hyperspace')
+const sceneFadeEl = document.getElementById('scene-fade')
+const volumeBtn = document.getElementById('volume-btn')
+
+const volumeImg = volumeBtn.querySelector('img')
+let isMuted = false
+volumeBtn.addEventListener('click', (event) => {
+  event.stopPropagation()
+  isMuted = !isMuted
+  Howler.mute(isMuted)
+  volumeImg.src = isMuted ? '/textures/audio_off.png' : '/textures/audio_on.png'
+  volumeImg.alt = isMuted ? 'Sound off' : 'Sound on'
+})
+
+function fadeToScene(callback) {
+  // Fade to black
+  sceneFadeEl.classList.add('black')
+  setTimeout(() => {
+    // Execute the scene change while screen is black
+    callback()
+    // Fade back in
+    setTimeout(() => {
+      sceneFadeEl.classList.remove('black')
+    }, 50)
+  }, 500)
+}
+
 launchBtn.addEventListener("click", (event) => {
   event.stopPropagation()  // Prevent click from bubbling up to window click handler
   console.log('Launch button clicked')
+
+  // Trigger hyperspace flash transition
+  hyperspaceEl.classList.add('active')
+  hyperspaceEl.addEventListener('animationend', () => {
+    hyperspaceEl.classList.remove('active')
+  }, { once: true })
+
   introScreen.style.opacity = "0"
   setTimeout(() => {
     introScreen.style.display = "none"
@@ -209,6 +243,11 @@ launchBtn.addEventListener("click", (event) => {
   // Show Planet Hop logo for 3D scenes
   showPlanetHopLogo()
   
+  // Show volume button now that the game has started
+  volumeBtn.style.display = 'flex'
+  volumeBtn.style.alignItems = 'center'
+  volumeBtn.style.justifyContent = 'center'
+
   // Start typewriter for the first intro page
   startTypewriter(introBodyTexts[introTextState], 'intro')
   
@@ -278,14 +317,14 @@ window.addEventListener("click", (event) => {
           startTypewriter(introBodyTexts[introTextState], 'intro')
           console.log('Navigated forward to state:', introTextState)
         } else {
-          // On final state, remove intro text and show planets
+          // On final state — fade to black, then show first planet
           typewriter.active = false
-          scene.remove(introText)
-          introText = null
-          
-          // Now show the first planet (Sun)
-          currentIndex = 0
-          loadPlanet(currentIndex)
+          fadeToScene(() => {
+            scene.remove(introText)
+            introText = null
+            currentIndex = 0
+            loadPlanet(currentIndex)
+          })
         }
       }
       // If clicked on main text area, do nothing (keep current state)

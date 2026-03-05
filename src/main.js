@@ -13,12 +13,34 @@ const successSound = new Howl({ src: ['/audio/success.ogg'] })
 
 const { scene, camera, renderer, controls, vrButton } = createScene()
 
-// Disable OrbitControls while in VR (headset drives the camera), re-enable on exit
+// ─── Responsive layout constants (1 unit ≈ 1 metre in VR) ──────────────────
+let isVRMode = false
+const DESKTOP = {
+  introPos:    [0, 0.8, -1.5],  introScale:  [8, 4, 1],
+  planetPos:   [-2, 0, 0],      planetScale: 2.2,
+  factPos:     [4, 0, 0],       factScale:   [5.33, 3, 1],
+  resultPos:   [0, 0.8, -1.5],  resultScale: [8, 4, 1],
+  logoPos:     [-4.0, 3.0, 0]
+}
+const VR_LAYOUT = {
+  introPos:    [0, 1.6, -5],    introScale:  [4.5, 2.25, 1],
+  planetPos:   [-1.2, 1.6, -4], planetScale: 1.0,
+  factPos:     [1.8, 1.6, -4],  factScale:   [3.0, 1.7, 1],
+  resultPos:   [0, 1.6, -5],    resultScale: [4.5, 2.25, 1],
+  logoPos:     [-2.5, 2.8, -5]
+}
+function curLayout() { return isVRMode ? VR_LAYOUT : DESKTOP }
+
+// Disable OrbitControls in VR; switch layout on enter/exit
 renderer.xr.addEventListener('sessionstart', () => {
   controls.enabled = false
+  isVRMode = true
+  applyLayout()
 })
 renderer.xr.addEventListener('sessionend', () => {
   controls.enabled = true
+  isVRMode = false
+  applyLayout()
 })
 
 // Create stars + Milky Way - this will be visible throughout the entire experience
@@ -106,8 +128,7 @@ function setGroupOpacity(group, opacity) {
 function showPlanetHopLogo() {
   if (!planetHopLogo) {
     planetHopLogo = createPlanetHopLogo()
-    // Position in top-left corner of camera view
-    planetHopLogo.position.set(-4.0, 3.0, 0)
+    planetHopLogo.position.set(...curLayout().logoPos)
     scene.add(planetHopLogo)
   }
 }
@@ -116,6 +137,30 @@ function hidePlanetHopLogo() {
   if (planetHopLogo) {
     scene.remove(planetHopLogo)
     planetHopLogo = null
+  }
+}
+
+// Reposition all active scene content to the current (desktop or VR) layout
+function applyLayout() {
+  const lay = curLayout()
+  if (introText) {
+    introText.position.set(...lay.introPos)
+    introText.scale.set(...lay.introScale)
+  }
+  if (currentPlanet) {
+    currentPlanet.position.set(...lay.planetPos)
+    currentPlanet.scale.setScalar(lay.planetScale)
+  }
+  if (currentText) {
+    currentText.position.set(...lay.factPos)
+    currentText.scale.set(...lay.factScale)
+  }
+  if (resultSprite) {
+    resultSprite.position.set(...lay.resultPos)
+    resultSprite.scale.set(...lay.resultScale)
+  }
+  if (planetHopLogo) {
+    planetHopLogo.position.set(...lay.logoPos)
   }
 }
 
@@ -170,15 +215,16 @@ function clearSelectionScreen() {
 function loadPlanetInstant(index, factIndex = 0) {
   currentFactIndex = factIndex
   const data = planets[index]
+  const lay = curLayout()
 
   currentPlanet = createPlanet(data)
-  currentPlanet.position.set(-2, 0, 0)
-  currentPlanet.scale.set(2.2, 2.2, 2.2)
+  currentPlanet.position.set(...lay.planetPos)
+  currentPlanet.scale.setScalar(lay.planetScale)
   scene.add(currentPlanet)
 
   currentText = createFactTextBox(data.facts[factIndex], data.name, index, factIndex, data.facts.length)
-  currentText.position.set(4, 0, 0)
-  currentText.scale.set(5.33, 3, 1)
+  currentText.position.set(...lay.factPos)
+  currentText.scale.set(...lay.factScale)
   scene.add(currentText)
 
   showPlanetHopLogo()
@@ -289,9 +335,9 @@ launchBtn.addEventListener("click", (event) => {
   console.log('Intro text material:', introText.material)
   console.log('Intro text map:', introText.material.map)
   
-  // Position intro text properly in camera view
-  introText.position.set(0, 0.8, -1.5)  // Move closer to camera for better visibility
-  introText.scale.set(8, 4, 1)          // Set appropriate scale for the scene
+  // Position intro text using current layout (desktop or VR)
+  introText.position.set(...curLayout().introPos)
+  introText.scale.set(...curLayout().introScale)
   scene.add(introText)
   console.log('Interactive intro text added to scene at position:', introText.position)
   
@@ -452,9 +498,8 @@ window.addEventListener("click", (event) => {
       controls.update()
 
       resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
-      // Match intro text position and scale exactly
-      resultSprite.position.set(0, 0.8, -1.5)
-      resultSprite.scale.set(8, 4, 1)
+      resultSprite.position.set(...curLayout().resultPos)
+      resultSprite.scale.set(...curLayout().resultScale)
       scene.add(resultSprite)
 
       // Show Planet Hop logo for result screens
@@ -585,7 +630,8 @@ renderer.setAnimationLoop(() => {
 
     if (planetTransition.phase === 'out') {
       // Scale up and fade out old planet
-      const scale = 2.2 + t * (14 - 2.2)
+      const targetScale = curLayout().planetScale
+      const scale = targetScale + t * (14 - targetScale)
       planetTransition.outPlanet.scale.setScalar(scale)
       setGroupOpacity(planetTransition.outPlanet, 1 - t)
 
@@ -607,12 +653,13 @@ renderer.setAnimationLoop(() => {
       }
     } else if (planetTransition.phase === 'in') {
       // Scale up and fade in new planet
-      const scale = 0.1 + t * (2.2 - 0.1)
+      const targetScale = curLayout().planetScale
+      const scale = 0.1 + t * (targetScale - 0.1)
       currentPlanet.scale.setScalar(scale)
       setGroupOpacity(currentPlanet, t)
 
       if (t >= 1) {
-        currentPlanet.scale.set(2.2, 2.2, 2.2)
+        currentPlanet.scale.setScalar(targetScale)
         setGroupOpacity(currentPlanet, 1)
         if (currentText) currentText.visible = true
         planetTransition.active = false

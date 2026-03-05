@@ -193,6 +193,20 @@
         min-width: 160px;
     }
 
+    /* Return Home button — shown on result screen, sits just below the result textbox */
+    #home-btn {
+        position: fixed;
+        top: 78%;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        display: none;
+        padding: 20px 48px;
+        font-size: 18px;
+        font-family: 'Space Grotesk', sans-serif;
+        letter-spacing: 1px;
+    }
+
     /* Fade to black scene transition */
     #scene-fade {
         position: fixed;
@@ -239,6 +253,7 @@
 </head>
 <body>
   <button id="volume-btn" title="Toggle sound"><img src="/textures/audio_on.png" alt="Sound on" /></button>
+  <button id="home-btn">⟵ RETURN HOME</button>
   <div id="scene-fade"></div>
   <div id="hyperspace"></div>
   <div id="introScreen">

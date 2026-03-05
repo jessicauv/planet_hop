@@ -274,22 +274,24 @@ export function createPlanetHopLogo() {
 }
 
 function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars = Infinity) {
+  // Background + border — same style as intro text box
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
   context.strokeStyle = "lightblue"
   context.lineWidth = 6
   context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
 
+  // Body text — 120px to match intro style, centered vertically
   const displayResultText = Number.isFinite(visibleChars) ? text.slice(0, visibleChars) : text
   context.fillStyle = "lightblue"
   context.textAlign = "center"
-  drawWrappedText(context, displayResultText, canvas.width / 2, 200, canvas.width - 200, 60, 72)
+  drawWrappedText(context, displayResultText, canvas.width / 2, 320, canvas.width - 400, 120, 144)
 
   // Page indicator dots
-  const dotRadius = 16
-  const dotSpacing = 50
+  const dotRadius = 20
+  const dotSpacing = 70
   const dotsStartX = canvas.width / 2 - ((totalMessages - 1) * dotSpacing) / 2
-  const dotsY = canvas.height - 130
+  const dotsY = canvas.height - 160
   for (let i = 0; i < totalMessages; i++) {
     context.beginPath()
     context.arc(dotsStartX + i * dotSpacing, dotsY, dotRadius, 0, Math.PI * 2)
@@ -297,32 +299,32 @@ function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages,
     context.fill()
   }
 
-  // Navigation arrows
-  const buttonSize = 80
-  const bottomY = canvas.height - 80
+  // Navigation arrows — same 2× size as intro text box
+  const buttonSize = 160
+  const bottomY = canvas.height - 160
 
   // Back arrow — dimmed on first message
   context.fillStyle = messageIndex === 0 ? "rgba(255, 255, 255, 0.3)" : "lightblue"
   context.beginPath()
-  context.moveTo(140, bottomY - buttonSize / 2)
-  context.lineTo(80, bottomY)
-  context.lineTo(140, bottomY + buttonSize / 2)
+  context.moveTo(280, bottomY - buttonSize / 2)
+  context.lineTo(160, bottomY)
+  context.lineTo(280, bottomY + buttonSize / 2)
   context.fill()
 
   // Forward arrow — dimmed on last message
   context.fillStyle = messageIndex === totalMessages - 1 ? "rgba(255, 255, 255, 0.3)" : "lightblue"
   context.beginPath()
-  context.moveTo(canvas.width - 140, bottomY - buttonSize / 2)
-  context.lineTo(canvas.width - 80, bottomY)
-  context.lineTo(canvas.width - 140, bottomY + buttonSize / 2)
+  context.moveTo(canvas.width - 280, bottomY - buttonSize / 2)
+  context.lineTo(canvas.width - 160, bottomY)
+  context.lineTo(canvas.width - 280, bottomY + buttonSize / 2)
   context.fill()
 }
 
 export function createResultBox(text, messageIndex = 0, totalMessages = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  canvas.width = 1920
-  canvas.height = 720
+  canvas.width = 2560
+  canvas.height = 1280
 
   drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars)
 
@@ -337,11 +339,12 @@ export function createResultBox(text, messageIndex = 0, totalMessages = 3, visib
     blending: THREE.NormalBlending
   })
   const sprite = new THREE.Sprite(material)
-  sprite.scale.set(13.3, 5, 1)
+  sprite.scale.set(18, 9, 1)
 
+  // Hit areas match intro text box layout: bottomY=1120, arrows at x=160–280 and x=2280–2400
   sprite.userData = {
-    backButtonArea: { x: 50, y: canvas.height - 150, width: 120, height: 120 },
-    forwardButtonArea: { x: canvas.width - 170, y: canvas.height - 150, width: 120, height: 120 }
+    backButtonArea:    { x: 160,  y: 1040, width: 120, height: 160 },
+    forwardButtonArea: { x: 2280, y: 1040, width: 120, height: 160 }
   }
 
   return sprite
@@ -350,8 +353,8 @@ export function createResultBox(text, messageIndex = 0, totalMessages = 3, visib
 export function updateResultBox(sprite, text, messageIndex, totalMessages = 3, visibleChars = Infinity) {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  canvas.width = 1920
-  canvas.height = 720
+  canvas.width = 2560
+  canvas.height = 1280
 
   drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages, visibleChars)
 

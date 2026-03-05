@@ -8,6 +8,7 @@ import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroTex
 const forwardSound = new Howl({ src: ['/audio/front_arrow.ogg'] })
 const backSound = new Howl({ src: ['/audio/back_arrow.ogg'] })
 const resultSound = new Howl({ src: ['/audio/result.ogg'] })
+const successSound = new Howl({ src: ['/audio/success.ogg'] })
 
 
 const { scene, camera, renderer, controls, vrButton } = createScene()
@@ -133,7 +134,7 @@ function showPlanetSelection() {
 
   // Show selection message
   selectionMessageSprite = createSelectionMessageBox()
-  selectionMessageSprite.position.set(0, 4.2, 0)
+  selectionMessageSprite.position.set(0, 6.0, 0)
   scene.add(selectionMessageSprite)
 
   // Lay out all planets in a row
@@ -218,6 +219,11 @@ let introTextState = 0
 const hyperspaceEl = document.getElementById('hyperspace')
 const sceneFadeEl = document.getElementById('scene-fade')
 const volumeBtn = document.getElementById('volume-btn')
+const homeBtn = document.getElementById('home-btn')
+
+homeBtn.addEventListener('click', () => {
+  location.reload()
+})
 
 const volumeImg = volumeBtn.querySelector('img')
 let isMuted = false
@@ -425,24 +431,37 @@ window.addEventListener("click", (event) => {
 
       clearSelectionScreen()
 
+      // Play success sound for the correct planet choice
+      if (planetName === 'Mars') successSound.play()
+
       // Build 3-message result sequence
       const firstMessage = planetName === 'Mars'
         ? "Correct! Humans may be able to live on Mars but only with technology and protection!"
-        : planetData.facts[2]
+        : "Not quite. Most planets are too hot, too cold, or made of gas. Mars is one of the best options."
 
       resultMessages = [
         firstMessage,
-        "Now, the real mission is protecting Earth. Earth is our best home. It has Liquid water, Oxygen, Forests, Animals, A protective atmosphere.",
-        "We need to work together to cool the planet and protect our future. You can help by: 🌳 Planting trees, ⚡ Using clean energy, 🚲 Riding bikes or walking, ♻️ Reducing waste, 💡 Saving electricity. This is called Climate Action."
+        "Now, the real mission is protecting Earth. Earth is our best home. It has liquid water, oxygen, forests, animals and a protective atmosphere.",
+        "We must work together to protect our planet. You can help by planting trees, using clean energy, walking or biking, reducing waste, and saving electricity. This is climate action."
       ]
       resultMessageIndex = 0
 
+      // Reset camera to intro-screen position so result box matches intro layout
+      camera.position.set(0, 1.6, 5)
+      controls.target.set(0, 0, 0)
+      controls.update()
+
       resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
-      resultSprite.position.set(0, 0, 0)
+      // Match intro text position and scale exactly
+      resultSprite.position.set(0, 0.8, -1.5)
+      resultSprite.scale.set(8, 4, 1)
       scene.add(resultSprite)
-      
+
       // Show Planet Hop logo for result screens
       showPlanetHopLogo()
+
+      // Show the Return Home button
+      homeBtn.style.display = 'block'
     }
   } else if (gameStarted && resultSprite) {
     // Navigate result messages via arrows
@@ -453,8 +472,8 @@ window.addEventListener("click", (event) => {
     const intersects = raycaster.intersectObject(resultSprite)
     if (intersects.length > 0) {
       const uv = intersects[0].uv
-      const canvasWidth = 1920
-      const canvasHeight = 720
+      const canvasWidth = 2560
+      const canvasHeight = 1280
       const clickX = uv.x * canvasWidth
       const clickY = (1 - uv.y) * canvasHeight
 

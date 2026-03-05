@@ -145,6 +145,24 @@
         transform: scale(1.05);
     }
 
+    /* Planet Hop logo — fixed top-left, shown after LAUNCH */
+    #planet-hop-logo {
+        position: fixed;
+        top: 20px;
+        left: 24px;
+        z-index: 30;
+        display: none;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 16px;
+        color: lightblue;
+        letter-spacing: 1px;
+        text-shadow:
+            0 0 8px rgba(100, 180, 255, 0.6),
+            0 0 20px rgba(100, 180, 255, 0.3);
+        pointer-events: none;
+        user-select: none;
+    }
+
     /* Volume toggle button */
     #volume-btn {
         position: fixed;
@@ -252,6 +270,7 @@
   </style>
 </head>
 <body>
+  <div id="planet-hop-logo">PLANET.HOP</div>
   <button id="volume-btn" title="Toggle sound"><img src="/textures/audio_on.png" alt="Sound on" /></button>
   <button id="home-btn">⟵ RETURN HOME</button>
   <div id="scene-fade"></div>

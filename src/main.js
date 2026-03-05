@@ -16,18 +16,22 @@ const { scene, camera, renderer, controls, vrButton } = createScene()
 // ─── Responsive layout constants (1 unit ≈ 1 metre in VR) ──────────────────
 let isVRMode = false
 const DESKTOP = {
-  introPos:    [0, 0.8, -1.5],  introScale:  [8, 4, 1],
-  planetPos:   [-2, 0, 0],      planetScale: 2.2,
-  factPos:     [4, 0, 0],       factScale:   [5.33, 3, 1],
-  resultPos:   [0, 0.8, -1.5],  resultScale: [8, 4, 1],
-  logoPos:     [-4.0, 3.0, 0]
+  introPos:      [0, 0.8, -1.5],  introScale:    [8, 4, 1],
+  planetPos:     [-2, 0, 0],      planetScale:   2.2,
+  factPos:       [4, 0, 0],       factScale:     [5.33, 3, 1],
+  resultPos:     [0, 0.8, -1.5],  resultScale:   [8, 4, 1],
+  selZ:          0,    selScale:  1.6,  selSpacing: 6.2,
+  selPlanetY:    -0.8, selLabelY: -3.4, selMsgY:   6.0,
+  selMsgScale:   [22, 5, 1],      selLabelScale: [4.0, 1.1, 1]
 }
 const VR_LAYOUT = {
-  introPos:    [0, 1.6, -5],    introScale:  [4.5, 2.25, 1],
-  planetPos:   [-1.2, 1.6, -4], planetScale: 1.0,
-  factPos:     [1.8, 1.6, -4],  factScale:   [3.0, 1.7, 1],
-  resultPos:   [0, 1.6, -5],    resultScale: [4.5, 2.25, 1],
-  logoPos:     [-2.5, 2.8, -5]
+  introPos:      [0, 1.6, -5],    introScale:    [4.5, 2.25, 1],
+  planetPos:     [-1.2, 1.6, -4], planetScale:   1.0,
+  factPos:       [1.8, 1.6, -4],  factScale:     [3.0, 1.7, 1],
+  resultPos:     [0, 1.6, -5],    resultScale:   [4.5, 2.25, 1],
+  selZ:          -6,   selScale:  0.5,  selSpacing: 1.6,
+  selPlanetY:    1.6,  selLabelY: 0.5,  selMsgY:   3.6,
+  selMsgScale:   [6, 1.4, 1],     selLabelScale: [1.2, 0.33, 1]
 }
 function curLayout() { return isVRMode ? VR_LAYOUT : DESKTOP }
 
@@ -59,7 +63,8 @@ let selectionMessageSprite = null
 let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
-let planetHopLogo = null
+let planetHopLogo = null  // no longer a 3D sprite — logo is the HTML #planet-hop-logo element
+const logoEl = document.getElementById('planet-hop-logo')
 
 // Typewriter state
 const introBodyTexts = [
@@ -126,18 +131,11 @@ function setGroupOpacity(group, opacity) {
 }
 
 function showPlanetHopLogo() {
-  if (!planetHopLogo) {
-    planetHopLogo = createPlanetHopLogo()
-    planetHopLogo.position.set(...curLayout().logoPos)
-    scene.add(planetHopLogo)
-  }
+  logoEl.style.display = 'block'
 }
 
 function hidePlanetHopLogo() {
-  if (planetHopLogo) {
-    scene.remove(planetHopLogo)
-    planetHopLogo = null
-  }
+  logoEl.style.display = 'none'
 }
 
 // Reposition all active scene content to the current (desktop or VR) layout
@@ -159,8 +157,22 @@ function applyLayout() {
     resultSprite.position.set(...lay.resultPos)
     resultSprite.scale.set(...lay.resultScale)
   }
-  if (planetHopLogo) {
-    planetHopLogo.position.set(...lay.logoPos)
+  // Reposition selection screen planets if active
+  if (selectionMode && selectionPlanets.length > 0) {
+    const spacing = lay.selSpacing
+    const startX = -(planets.length - 1) * spacing / 2
+    selectionPlanets.forEach((p, i) => {
+      p.position.set(startX + i * spacing, lay.selPlanetY, lay.selZ)
+      p.scale.setScalar(lay.selScale)
+    })
+    selectionNameLabels.forEach((l, i) => {
+      l.position.set(startX + i * spacing, lay.selLabelY, lay.selZ)
+      l.scale.set(...lay.selLabelScale)
+    })
+    if (selectionMessageSprite) {
+      selectionMessageSprite.position.set(0, lay.selMsgY, lay.selZ)
+      selectionMessageSprite.scale.set(...lay.selMsgScale)
+    }
   }
 }
 
@@ -172,30 +184,36 @@ function showPlanetSelection() {
   if (currentPlanet) { scene.remove(currentPlanet); currentPlanet = null }
   if (currentText) { scene.remove(currentText); currentText = null }
 
-  // Zoom camera out to see all planets
-  camera.position.set(0, 1.6, 36)
-  controls.target.set(0, 0, 0)
-  controls.update()
+  const lay = curLayout()
+
+  // Zoom camera out on desktop; VR camera is headset-controlled so no change needed
+  if (!isVRMode) {
+    camera.position.set(0, 1.6, 36)
+    controls.target.set(0, 0, 0)
+    controls.update()
+  }
 
   // Show selection message
   selectionMessageSprite = createSelectionMessageBox()
-  selectionMessageSprite.position.set(0, 6.0, 0)
+  selectionMessageSprite.position.set(0, lay.selMsgY, lay.selZ)
+  selectionMessageSprite.scale.set(...lay.selMsgScale)
   scene.add(selectionMessageSprite)
 
-  // Lay out all planets in a row
-  const spacing = 6.2
+  // Lay out all planets in a row using layout spacing/scale/z
+  const spacing = lay.selSpacing
   const startX = -(planets.length - 1) * spacing / 2
 
   planets.forEach((planetData, i) => {
     const planet = createPlanet(planetData)
-    planet.position.set(startX + i * spacing, -0.8, 0)
-    planet.scale.set(1.6, 1.6, 1.6)
+    planet.position.set(startX + i * spacing, lay.selPlanetY, lay.selZ)
+    planet.scale.setScalar(lay.selScale)
     planet.userData = { planetName: planetData.name, planetData }
     scene.add(planet)
     selectionPlanets.push(planet)
 
     const label = createNameLabel(planetData.name)
-    label.position.set(startX + i * spacing, -3.4, 0)
+    label.position.set(startX + i * spacing, lay.selLabelY, lay.selZ)
+    label.scale.set(...lay.selLabelScale)
     scene.add(label)
     selectionNameLabels.push(label)
   })
@@ -606,8 +624,8 @@ renderer.setAnimationLoop(() => {
   if (currentPlanet) currentPlanet.rotation.y += 0.003
   if (planetTransition.outPlanet) planetTransition.outPlanet.rotation.y += 0.003
   // Selection planet rotation + hover scale effect
-  const NORMAL_SCALE = 1.6
-  const HOVER_SCALE = 2.0
+  const NORMAL_SCALE = curLayout().selScale
+  const HOVER_SCALE = NORMAL_SCALE * 1.25
   selectionPlanets.forEach(p => {
     p.rotation.y += 0.005
     const target = p === hoveredSelectionPlanet ? HOVER_SCALE : NORMAL_SCALE

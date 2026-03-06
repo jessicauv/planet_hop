@@ -5,10 +5,10 @@ import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
 
-const forwardSound = new Howl({ src: ['/audio/front_arrow.ogg'] })
-const backSound = new Howl({ src: ['/audio/back_arrow.ogg'] })
-const resultSound = new Howl({ src: ['/audio/result.ogg'] })
-const successSound = new Howl({ src: ['/audio/success.ogg'] })
+const forwardSound = new Howl({ src: ['/audio/front_arrow.mp3'] })
+const backSound = new Howl({ src: ['/audio/back_arrow.mp3'] })
+const resultSound = new Howl({ src: ['/audio/result.mp3'] })
+const successSound = new Howl({ src: ['/audio/success.mp3'] })
 
 
 const { scene, camera, renderer, controls, vrButton } = createScene()
@@ -515,9 +515,10 @@ launchBtn.addEventListener("click", (event) => {
 
   spaceAudio = createSpaceAudio()
 
-  if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
-    const audioCtx = new (AudioContext || webkitAudioContext)();
-    audioCtx.resume().catch(err => console.error('Failed to resume audio context:', err))
+  // Resume Howler's own AudioContext — this is what actually unlocks audio on iOS Safari.
+  // (Creating a separate AudioContext manually does NOT unlock Howler's internal one.)
+  if (Howler.ctx && Howler.ctx.state === 'suspended') {
+    Howler.ctx.resume().catch(err => console.error('Failed to resume Howler audio context:', err))
   }
 
   spaceAudio.play()

@@ -11,6 +11,13 @@
   <style>
     body { margin: 0; overflow: hidden; font-family: 'Space Grotesk', sans-serif; }
 
+    /* Make the Three.js canvas tappable on iOS Safari.
+       Without cursor:pointer, Safari silently drops tap events on plain canvas elements. */
+    canvas {
+      cursor: pointer;
+      touch-action: manipulation; /* also removes the 300ms tap delay on iOS */
+    }
+
     #introScreen {
         position: absolute;
         width: 100%;

@@ -90,7 +90,7 @@ export function createSpaceAudio() {
   console.log('Creating Howl instance with src:', '/audio/space.ogg', '/audio/space.mp3')
   
   const sound = new Howl({
-    src: ['/audio/space.ogg', '/audio/space.mp3'], // OGG first, MP3 fallback
+    src: ['/audio/space.mp3'],
     loop: true,
     volume: 0.1,
     onload: () => {

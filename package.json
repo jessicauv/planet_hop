@@ -1,8 +1,7 @@
 {
   "name": "planet_hop",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "An interactive 3D WebXR space exploration game with a climate change education mission",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -12,9 +11,16 @@
     "type": "git",
     "url": "git+https://github.com/jessicauv/planet_hop.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "webxr",
+    "three.js",
+    "vr",
+    "climate",
+    "education",
+    "space"
+  ],
+  "author": "Jessica U",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/jessicauv/planet_hop/issues"
   },

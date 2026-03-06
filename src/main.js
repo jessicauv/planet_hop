@@ -3,7 +3,7 @@ import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet, preloadPlanetTextures } from './planetFactory'
 import { planets, introBodyTexts as introBodyTextsData, resultMessages as resultMessagesData, wrongPlanetMessages, selectionMessage } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
+import { createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createVRInstructionsSprite } from './uiPanel'
 
 // ─── Language detection ───────────────────────────────────────────────────────
 // Reads the browser/device language setting; falls back to English for unsupported locales.
@@ -119,7 +119,6 @@ let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
 let vrInstructionsSprite = null  // shown when entering VR, dismissed with X
-let planetHopLogo = null  // logo is the HTML #planet-hop-logo element
 const logoEl = document.getElementById('planet-hop-logo')
 
 // Localized intro body texts (resolved once from storyData based on detected language)

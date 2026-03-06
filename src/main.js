@@ -33,7 +33,22 @@ const VR_LAYOUT = {
   selPlanetY:    1.6,  selLabelY: 0.5,  selMsgY:   3.6,
   selMsgScale:   [6, 1.4, 1],     selLabelScale: [1.2, 0.33, 1]
 }
-function curLayout() { return isVRMode ? VR_LAYOUT : DESKTOP }
+// Mobile portrait layout — everything centered in x, stacked vertically
+const MOBILE_LAYOUT = {
+  introPos:      [0, 0.8, -1.5],  introScale:    [3.5, 1.75, 1],
+  planetPos:     [0, 1.2, -2],    planetScale:   1.0,
+  factPos:       [0, -1.6, -1.5], factScale:     [3.5, 2.0, 1],
+  resultPos:     [0, 0.8, -1.5],  resultScale:   [3.5, 1.75, 1],
+  selZ:          -2,   selScale:  0.45, selSpacing: 1.3,
+  selPlanetY:    0.8,  selLabelY: -0.4, selMsgY:   3.2,
+  selMsgScale:   [5.5, 1.25, 1],  selLabelScale: [1.0, 0.28, 1]
+}
+function isMobileView() { return window.innerWidth < 768 }
+function curLayout() {
+  if (isVRMode) return VR_LAYOUT
+  if (isMobileView()) return MOBILE_LAYOUT
+  return DESKTOP
+}
 
 // Disable OrbitControls in VR; switch layout on enter/exit
 renderer.xr.addEventListener('sessionstart', () => {
@@ -209,7 +224,8 @@ function showPlanetSelection() {
   const lay = curLayout()
 
   if (!isVRMode) {
-    camera.position.set(0, 1.6, 36)
+    // Mobile needs camera closer; desktop uses far z to see wide planet spread
+    camera.position.set(0, 1.6, isMobileView() ? 14 : 36)
     controls.target.set(0, 0, 0)
     controls.update()
   }
@@ -519,6 +535,11 @@ launchBtn.addEventListener("click", (event) => {
 
   startTypewriter(introBodyTexts[introTextState], 'intro')
   gameStarted = true
+})
+
+// Re-apply layout on orientation change / window resize (mobile rotation etc.)
+window.addEventListener('resize', () => {
+  if (gameStarted && !isVRMode) applyLayout()
 })
 
 // ─── Mouse raycaster ────────────────────────────────────────────────────────

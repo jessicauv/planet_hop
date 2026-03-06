@@ -202,6 +202,32 @@
         display: none;
     }
 
+    /* ─── Mobile responsive ────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .intro-text h1 {
+            font-size: 36px;
+            text-shadow:
+                1px 1px 0 #2a7ab5,
+                2px 2px 0 #2a7ab5,
+                3px 3px 0 #1c528b,
+                5px 5px 10px rgba(0, 100, 255, 0.4);
+        }
+        .intro-text p { font-size: 18px; margin: 16px 0; }
+        .intro-content { padding: 40px 24px; gap: 20px; max-width: 100%; }
+        .typing-text { white-space: normal; border-right: none; animation: none; }
+        #home-btn { font-size: 15px; padding: 14px 28px; }
+    }
+
+    @media (max-width: 480px) {
+        .intro-text h1 { font-size: 22px; }
+        .intro-text p  { font-size: 14px; }
+        .intro-content { padding: 24px 14px; gap: 14px; }
+        button         { padding: 14px 24px; font-size: 15px; }
+        #home-btn      { font-size: 13px; padding: 12px 20px; }
+        #planet-hop-logo { font-size: 12px; top: 14px; left: 16px; }
+        #volume-btn    { width: 42px; height: 42px; top: 14px; right: 14px; }
+    }
+
     /* Keep VR button hidden until after LAUNCH (Three.js overrides inline display async) */
     #vr-btn.vr-hidden {
         display: none !important;

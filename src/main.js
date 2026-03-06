@@ -3,7 +3,7 @@ import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
-import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo } from './uiPanel'
+import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
 
 const forwardSound = new Howl({ src: ['/audio/front_arrow.ogg'] })
 const backSound = new Howl({ src: ['/audio/back_arrow.ogg'] })
@@ -40,6 +40,16 @@ renderer.xr.addEventListener('sessionstart', () => {
   controls.enabled = false
   isVRMode = true
   applyLayout()
+  // Show VR controls instructions — only if the game has launched
+  if (gameStarted) {
+    vrInstructionsSprite = createVRInstructionsSprite()
+    vrInstructionsSprite.position.set(...VR_LAYOUT.introPos)
+    scene.add(vrInstructionsSprite)
+    // Hide whatever content is currently showing so it doesn't overlap
+    if (introText) introText.visible = false
+    if (currentText) currentText.visible = false
+    if (resultSprite) resultSprite.visible = false
+  }
 })
 renderer.xr.addEventListener('sessionend', () => {
   controls.enabled = true
@@ -63,6 +73,7 @@ let selectionMessageSprite = null
 let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
+let vrInstructionsSprite = null  // shown when entering VR, dismissed with X
 let planetHopLogo = null  // logo is the HTML #planet-hop-logo element
 const logoEl = document.getElementById('planet-hop-logo')
 
@@ -312,6 +323,16 @@ function loadPlanet(index, factIndex = 0) {
 function navigateForward() {
   if (!gameStarted) return
 
+  // Dismiss VR instructions first, then restore whatever was showing
+  if (vrInstructionsSprite) {
+    scene.remove(vrInstructionsSprite)
+    vrInstructionsSprite = null
+    if (introText) introText.visible = true
+    if (currentText) currentText.visible = true
+    if (resultSprite) resultSprite.visible = true
+    return
+  }
+
   if (introText) {
     forwardSound.play()
     if (typewriter.active) {
@@ -364,6 +385,16 @@ function navigateForward() {
 
 function navigateBackward() {
   if (!gameStarted) return
+
+  // Dismiss VR instructions with Y button too
+  if (vrInstructionsSprite) {
+    scene.remove(vrInstructionsSprite)
+    vrInstructionsSprite = null
+    if (introText) introText.visible = true
+    if (currentText) currentText.visible = true
+    if (resultSprite) resultSprite.visible = true
+    return
+  }
 
   if (introText) {
     if (introTextState > 0) {

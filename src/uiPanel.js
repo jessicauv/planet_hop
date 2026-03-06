@@ -476,6 +476,78 @@ function drawNavigationButtons(context, width, height, textState) {
   context.fill()
 }
 
+export function createVRInstructionsSprite() {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  canvas.width = 2560
+  canvas.height = 1280
+
+  // Background + border — same dark-blue style as all other panels
+  context.fillStyle = 'rgba(0, 0, 128, 0.6)'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.strokeStyle = 'lightblue'
+  context.lineWidth = 6
+  context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
+
+  context.fillStyle = 'lightblue'
+  context.textAlign = 'center'
+
+  // Title
+  context.font = "bold 130px 'Press Start 2P', cursive"
+  context.fillText('VR CONTROLS', canvas.width / 2, 200)
+
+  // Divider
+  context.strokeStyle = 'rgba(173, 216, 230, 0.4)'
+  context.lineWidth = 3
+  context.beginPath()
+  context.moveTo(100, 260)
+  context.lineTo(canvas.width - 100, 260)
+  context.stroke()
+
+  // Controls list
+  context.fillStyle = 'lightblue'
+  context.font = "85px 'Space Grotesk', sans-serif"
+  const lx = 200   // left column
+  const rx = 1480  // right column
+  let y = 410
+  const gap = 130
+
+  const rows = [
+    ['X Button',               'Next / Select'],
+    ['Y Button',               'Back'],
+    ['Right Thumbstick Press', 'Mute / Unmute'],
+    ['Gaze at planet + X',     'Choose that planet'],
+  ]
+
+  rows.forEach(([label, value]) => {
+    context.textAlign = 'left'
+    context.fillText(label, lx, y)
+    context.textAlign = 'right'
+    context.fillText(value, canvas.width - lx, y)
+    y += gap
+  })
+
+  // "Press X to begin" prompt
+  context.textAlign = 'center'
+  context.font = "bold 95px 'Space Grotesk', sans-serif"
+  context.fillStyle = 'rgba(173, 216, 230, 0.75)'
+  context.fillText('Press  X  to begin', canvas.width / 2, 1150)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.NormalBlending
+  })
+  const sprite = new THREE.Sprite(material)
+  sprite.scale.set(4.5, 2.25, 1)
+  return sprite
+}
+
 export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity) {
   // Update the sprite's text state and recreate the texture
   sprite.userData.textState = textState

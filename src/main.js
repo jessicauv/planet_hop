@@ -39,10 +39,14 @@ const MOBILE_LAYOUT = {
   planetPos:     [0, 1.2, -2],    planetScale:   1.0,
   factPos:       [0, -1.6, -1.5], factScale:     [3.5, 2.0, 1],
   resultPos:     [0, 0.8, -1.5],  resultScale:   [3.5, 1.75, 1],
-  selZ:          -2,   selScale:  0.7,  selSpacing: 1.2,
-  selPlanetY:    0.8,  selLabelY: -0.5, selMsgY:   3.2,
+  selZ:          -2,   selScale:  0.7,  selSpacing: 1.4,
+  // 2-row planet selection: row1 = first 4 planets, row2 = remaining 3
+  selRow1Y:      1.4,  selRow1LabelY:  0.1,
+  selRow2Y:     -0.9,  selRow2LabelY: -2.2,
+  selPlanetY:    0.8,  selLabelY:     -0.5, selMsgY:   3.2,
   selMsgScale:   [6.5, 1.5, 1],   selLabelScale: [1.2, 0.33, 1]
 }
+const MOBILE_ROW1_COUNT = 4   // first N planets go on row 1; rest on row 2
 function isMobileView() { return window.innerWidth < 768 }
 function curLayout() {
   if (isVRMode) return VR_LAYOUT
@@ -184,13 +188,35 @@ function applyLayout() {
   }
   if (selectionMode && selectionPlanets.length > 0) {
     const spacing = lay.selSpacing
-    const startX = -(planets.length - 1) * spacing / 2
+    const mobileGrid = isMobileView() && !isVRMode
     selectionPlanets.forEach((p, i) => {
-      p.position.set(startX + i * spacing, lay.selPlanetY, lay.selZ)
+      let px, py
+      if (mobileGrid) {
+        const inRow1 = i < MOBILE_ROW1_COUNT
+        const rowCount = inRow1 ? MOBILE_ROW1_COUNT : (planets.length - MOBILE_ROW1_COUNT)
+        const posInRow = inRow1 ? i : i - MOBILE_ROW1_COUNT
+        px = -(rowCount - 1) * spacing / 2 + posInRow * spacing
+        py = inRow1 ? lay.selRow1Y : lay.selRow2Y
+      } else {
+        px = -(planets.length - 1) * spacing / 2 + i * spacing
+        py = lay.selPlanetY
+      }
+      p.position.set(px, py, lay.selZ)
       p.scale.setScalar(lay.selScale)
     })
     selectionNameLabels.forEach((l, i) => {
-      l.position.set(startX + i * spacing, lay.selLabelY, lay.selZ)
+      let px, labelY
+      if (mobileGrid) {
+        const inRow1 = i < MOBILE_ROW1_COUNT
+        const rowCount = inRow1 ? MOBILE_ROW1_COUNT : (planets.length - MOBILE_ROW1_COUNT)
+        const posInRow = inRow1 ? i : i - MOBILE_ROW1_COUNT
+        px = -(rowCount - 1) * spacing / 2 + posInRow * spacing
+        labelY = inRow1 ? lay.selRow1LabelY : lay.selRow2LabelY
+      } else {
+        px = -(planets.length - 1) * spacing / 2 + i * spacing
+        labelY = lay.selLabelY
+      }
+      l.position.set(px, labelY, lay.selZ)
       l.scale.set(...lay.selLabelScale)
     })
     if (selectionMessageSprite) {
@@ -236,18 +262,34 @@ function showPlanetSelection() {
   scene.add(selectionMessageSprite)
 
   const spacing = lay.selSpacing
-  const startX = -(planets.length - 1) * spacing / 2
+  const mobileGrid = isMobileView() && !isVRMode  // 2-row grid on mobile only
 
   planets.forEach((planetData, i) => {
+    let px, py
+    if (mobileGrid) {
+      // Row 1: indices 0..MOBILE_ROW1_COUNT-1, Row 2: the rest (centered)
+      const inRow1 = i < MOBILE_ROW1_COUNT
+      const rowCount = inRow1 ? MOBILE_ROW1_COUNT : (planets.length - MOBILE_ROW1_COUNT)
+      const posInRow = inRow1 ? i : i - MOBILE_ROW1_COUNT
+      px = -(rowCount - 1) * spacing / 2 + posInRow * spacing
+      py = inRow1 ? lay.selRow1Y : lay.selRow2Y
+    } else {
+      px = -(planets.length - 1) * spacing / 2 + i * spacing
+      py = lay.selPlanetY
+    }
+
     const planet = createPlanet(planetData)
-    planet.position.set(startX + i * spacing, lay.selPlanetY, lay.selZ)
+    planet.position.set(px, py, lay.selZ)
     planet.scale.setScalar(lay.selScale)
     planet.userData = { planetName: planetData.name, planetData }
     scene.add(planet)
     selectionPlanets.push(planet)
 
+    const labelY = mobileGrid
+      ? (i < MOBILE_ROW1_COUNT ? lay.selRow1LabelY : lay.selRow2LabelY)
+      : lay.selLabelY
     const label = createNameLabel(planetData.name)
-    label.position.set(startX + i * spacing, lay.selLabelY, lay.selZ)
+    label.position.set(px, labelY, lay.selZ)
     label.scale.set(...lay.selLabelScale)
     scene.add(label)
     selectionNameLabels.push(label)
@@ -548,6 +590,9 @@ const mouse = new THREE.Vector2()
 // Track hovered planet on selection screen
 let hoveredSelectionPlanet = null
 
+// Deduplication: prevent touchend + synthesized click from both firing on touch devices
+let lastTouchTime = 0
+
 window.addEventListener('mousemove', (event) => {
   if (!selectionMode || selectionPlanets.length === 0) return
 
@@ -578,6 +623,8 @@ window.addEventListener("click", (event) => {
   if (!gameStarted) return
   // Skip clicks on HTML UI elements so they don't trigger 3D raycasting
   if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
+  // Skip synthesized click events that follow a touchend (prevents double-fire on Chrome mobile)
+  if (Date.now() - lastTouchTime < 300) return
 
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
@@ -618,6 +665,7 @@ window.addEventListener("click", (event) => {
 // OrbitControls overrides the canvas cursor via inline style, breaking that
 // heuristic. touchend fires unconditionally, so we use it as a reliable fallback.
 window.addEventListener("touchend", (event) => {
+  lastTouchTime = Date.now()  // Record time so the synthesized 'click' that follows is suppressed
   if (!gameStarted) return
   if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
   if (event.changedTouches.length === 0) return

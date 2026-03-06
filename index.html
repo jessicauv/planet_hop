@@ -36,6 +36,11 @@
         box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
     }
 
+    .intro-text {
+        text-align: center;
+        width: 100%;
+    }
+
     .intro-text h1 {
         margin: 0;
         font-size: 60px;
@@ -145,7 +150,7 @@
         transform: scale(1.05);
     }
 
-    /* Planet Hop logo — fixed top-left, shown after LAUNCH */
+    /* Planet Hop logo — fixed top-left, shown after LAUNCH, clickable to go home */
     #planet-hop-logo {
         position: fixed;
         top: 20px;
@@ -159,8 +164,13 @@
         text-shadow:
             0 0 8px rgba(100, 180, 255, 0.6),
             0 0 20px rgba(100, 180, 255, 0.3);
-        pointer-events: none;
+        cursor: pointer;
         user-select: none;
+        transition: opacity 0.2s ease;
+    }
+
+    #planet-hop-logo:hover {
+        opacity: 0.75;
     }
 
     /* Volume toggle button */

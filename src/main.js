@@ -39,9 +39,9 @@ const MOBILE_LAYOUT = {
   planetPos:     [0, 1.2, -2],    planetScale:   1.0,
   factPos:       [0, -1.6, -1.5], factScale:     [3.5, 2.0, 1],
   resultPos:     [0, 0.8, -1.5],  resultScale:   [3.5, 1.75, 1],
-  selZ:          -2,   selScale:  0.45, selSpacing: 1.3,
-  selPlanetY:    0.8,  selLabelY: -0.4, selMsgY:   3.2,
-  selMsgScale:   [5.5, 1.25, 1],  selLabelScale: [1.0, 0.28, 1]
+  selZ:          -2,   selScale:  0.7,  selSpacing: 1.2,
+  selPlanetY:    0.8,  selLabelY: -0.5, selMsgY:   3.2,
+  selMsgScale:   [6.5, 1.5, 1],   selLabelScale: [1.2, 0.33, 1]
 }
 function isMobileView() { return window.innerWidth < 768 }
 function curLayout() {
@@ -225,7 +225,7 @@ function showPlanetSelection() {
 
   if (!isVRMode) {
     // Mobile needs camera closer; desktop uses far z to see wide planet spread
-    camera.position.set(0, 1.6, isMobileView() ? 14 : 36)
+    camera.position.set(0, 1.6, isMobileView() ? 12 : 36)
     controls.target.set(0, 0, 0)
     controls.update()
   }
@@ -482,6 +482,10 @@ const sceneFadeEl = document.getElementById('scene-fade')
 const volumeBtn = document.getElementById('volume-btn')
 const homeBtn = document.getElementById('home-btn')
 
+logoEl.addEventListener('click', () => {
+  location.reload()
+})
+
 homeBtn.addEventListener('click', () => {
   location.reload()
 })
@@ -497,7 +501,7 @@ volumeBtn.addEventListener('click', (event) => {
 })
 
 launchBtn.addEventListener("click", (event) => {
-  event.stopPropagation()
+  // No stopPropagation — Howler needs the click to bubble to document to unlock iOS Web Audio
 
   hyperspaceEl.classList.add('active')
   hyperspaceEl.addEventListener('animationend', () => {
@@ -570,64 +574,47 @@ window.addEventListener('mousemove', (event) => {
   }
 })
 
-// ─── Mouse click handler ─────────────────────────────────────────────────────
+// ─── Mouse / touch click handler ─────────────────────────────────────────────
+// Uses UV percentage thresholds so it works on any screen size / device:
+//   UV.x < 0.20  → left zone  → back
+//   UV.x > 0.80  → right zone → forward
+// No hardcoded canvas pixel coordinates needed.
 window.addEventListener("click", (event) => {
   if (!gameStarted) return
+  // Skip clicks on HTML UI elements so they don't trigger 3D raycasting
+  if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
 
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
   raycaster.setFromCamera(mouse, camera)
 
   if (introText) {
-    const intersects = raycaster.intersectObject(introText)
-    if (intersects.length === 0) return
-    const uv = intersects[0].uv
-    const clickX = uv.x * 2560
-    const clickY = (1 - uv.y) * 1280
-
-    const back = { x: 160, y: 1040, w: 120, h: 160 }
-    const fwd  = { x: 2280, y: 1040, w: 120, h: 160 }
-
-    const inBack = clickX >= back.x && clickX <= back.x + back.w && clickY >= back.y && clickY <= back.y + back.h
-    const inFwd  = clickX >= fwd.x  && clickX <= fwd.x  + fwd.w  && clickY >= fwd.y  && clickY <= fwd.y  + fwd.h
-
-    if (inBack) navigateBackward()
-    else if (inFwd) navigateForward()
+    const hits = raycaster.intersectObject(introText)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
 
   } else if (selectionMode) {
-    const intersects = raycaster.intersectObjects(selectionPlanets, true)
-    if (intersects.length === 0) return
-    let root = intersects[0].object
+    const hits = raycaster.intersectObjects(selectionPlanets, true)
+    if (hits.length === 0) return
+    let root = hits[0].object
     while (root && !root.userData.planetName) root = root.parent
     if (root) selectPlanet(root.userData.planetName)
 
   } else if (resultSprite) {
-    const intersects = raycaster.intersectObject(resultSprite)
-    if (intersects.length === 0) return
-    const uv = intersects[0].uv
-    const clickX = uv.x * 2560
-    const clickY = (1 - uv.y) * 1280
-    const { backButtonArea: b, forwardButtonArea: f } = resultSprite.userData
-
-    const inBack = clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
-    const inFwd  = clickX >= f.x && clickX <= f.x + f.width  && clickY >= f.y && clickY <= f.y + f.height
-
-    if (inBack) navigateBackward()
-    else if (inFwd) navigateForward()
+    const hits = raycaster.intersectObject(resultSprite)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
 
   } else if (currentText) {
-    const intersects = raycaster.intersectObject(currentText)
-    if (intersects.length === 0) return
-    const uv = intersects[0].uv
-    const clickX = uv.x * 1280
-    const clickY = (1 - uv.y) * 720
-    const { backButtonArea: b, forwardButtonArea: f } = currentText.userData
-
-    const inBack = clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
-    const inFwd  = clickX >= f.x && clickX <= f.x + f.width  && clickY >= f.y && clickY <= f.y + f.height
-
-    if (inBack) navigateBackward()
-    else if (inFwd) navigateForward()
+    const hits = raycaster.intersectObject(currentText)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
   }
 })
 

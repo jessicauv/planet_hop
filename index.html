@@ -202,6 +202,11 @@
         display: none;
     }
 
+    /* Keep VR button hidden until after LAUNCH (Three.js overrides inline display async) */
+    #vr-btn.vr-hidden {
+        display: none !important;
+    }
+
     /* Force VR button centering — overrides Three.js VRButton inline styles */
     #vr-btn {
         left: 50% !important;

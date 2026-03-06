@@ -28,6 +28,7 @@ export function createScene() {
   if (navigator.xr) {
     vrButton = VRButton.createButton(renderer)
     vrButton.id = 'vr-btn'
+    vrButton.classList.add('vr-hidden')  // hide until after LAUNCH
     // Override default inline styles to match the space aesthetic
     vrButton.style.cssText = `
       position: fixed;

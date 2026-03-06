@@ -47,7 +47,7 @@ renderer.xr.addEventListener('sessionend', () => {
   applyLayout()
 })
 
-// Create stars + Milky Way - this will be visible throughout the entire experience
+// Create stars + Milky Way
 const { milkyWaySphere, closeStars, farStars, distantStars } = createStarfield(scene)
 
 let currentIndex = 0
@@ -63,7 +63,7 @@ let selectionMessageSprite = null
 let resultSprite = null
 let resultMessages = []
 let resultMessageIndex = 0
-let planetHopLogo = null  // no longer a 3D sprite — logo is the HTML #planet-hop-logo element
+let planetHopLogo = null  // logo is the HTML #planet-hop-logo element
 const logoEl = document.getElementById('planet-hop-logo')
 
 // Typewriter state
@@ -108,20 +108,19 @@ function completeTypewriter() {
 }
 
 // ─── Planet warp-zoom transition ────────────────────────────────────────────
-const WARP_FRAMES = 22  // frames per phase (~0.37s at 60fps)
+const WARP_FRAMES = 22
 
 const planetTransition = {
   active: false,
   phase: null,      // 'out' | 'in'
   progress: 0,
   outPlanet: null,
-  inData: null      // { index, factIndex }
+  inData: null
 }
 
 function setGroupOpacity(group, opacity) {
   group.traverse(child => {
     if (child.isMesh && child.material) {
-      // Respect each mesh's intended base opacity (e.g. glow spheres at 0.09)
       const base = child.userData.baseOpacity !== undefined ? child.userData.baseOpacity : 1
       child.material.transparent = true
       child.material.opacity = base * opacity
@@ -157,7 +156,6 @@ function applyLayout() {
     resultSprite.position.set(...lay.resultPos)
     resultSprite.scale.set(...lay.resultScale)
   }
-  // Reposition selection screen planets if active
   if (selectionMode && selectionPlanets.length > 0) {
     const spacing = lay.selSpacing
     const startX = -(planets.length - 1) * spacing / 2
@@ -176,30 +174,40 @@ function applyLayout() {
   }
 }
 
+function fadeToScene(callback) {
+  if (isVRMode) {
+    // HTML overlays don't render in the XR compositor — skip fade in VR
+    callback()
+    return
+  }
+  sceneFadeEl.classList.add('black')
+  setTimeout(() => {
+    callback()
+    setTimeout(() => {
+      sceneFadeEl.classList.remove('black')
+    }, 50)
+  }, 500)
+}
+
 function showPlanetSelection() {
-  // Hide Planet Hop logo for selection screen
   hidePlanetHopLogo()
-  
-  // Clear current planet and text
+
   if (currentPlanet) { scene.remove(currentPlanet); currentPlanet = null }
   if (currentText) { scene.remove(currentText); currentText = null }
 
   const lay = curLayout()
 
-  // Zoom camera out on desktop; VR camera is headset-controlled so no change needed
   if (!isVRMode) {
     camera.position.set(0, 1.6, 36)
     controls.target.set(0, 0, 0)
     controls.update()
   }
 
-  // Show selection message
   selectionMessageSprite = createSelectionMessageBox()
   selectionMessageSprite.position.set(0, lay.selMsgY, lay.selZ)
   selectionMessageSprite.scale.set(...lay.selMsgScale)
   scene.add(selectionMessageSprite)
 
-  // Lay out all planets in a row using layout spacing/scale/z
   const spacing = lay.selSpacing
   const startX = -(planets.length - 1) * spacing / 2
 
@@ -230,6 +238,34 @@ function clearSelectionScreen() {
   selectionMode = false
 }
 
+function selectPlanet(planetName) {
+  clearSelectionScreen()
+  if (planetName === 'Mars') successSound.play()
+
+  const firstMessage = planetName === 'Mars'
+    ? "Correct! Humans may be able to live on Mars but only with technology and protection!"
+    : "Not quite. Most planets are too hot, too cold, or made of gas. Mars is one of the best options."
+
+  resultMessages = [
+    firstMessage,
+    "Now, the real mission is protecting Earth. Earth is our best home. It has liquid water, oxygen, forests, animals and a protective atmosphere.",
+    "We must work together to protect our planet. You can help by planting trees, using clean energy, walking or biking, reducing waste, and saving electricity. This is climate action."
+  ]
+  resultMessageIndex = 0
+
+  camera.position.set(0, 1.6, 5)
+  controls.target.set(0, 0, 0)
+  controls.update()
+
+  resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
+  resultSprite.position.set(...curLayout().resultPos)
+  resultSprite.scale.set(...curLayout().resultScale)
+  scene.add(resultSprite)
+
+  showPlanetHopLogo()
+  homeBtn.style.display = 'block'
+}
+
 function loadPlanetInstant(index, factIndex = 0) {
   currentFactIndex = factIndex
   const data = planets[index]
@@ -250,7 +286,6 @@ function loadPlanetInstant(index, factIndex = 0) {
 
 function loadPlanet(index, factIndex = 0) {
   if (currentPlanet) {
-    // Hide text immediately; keep old planet for warp-out animation
     if (currentText) { scene.remove(currentText); currentText = null }
 
     planetTransition.active = true
@@ -260,7 +295,6 @@ function loadPlanet(index, factIndex = 0) {
     planetTransition.inData = { index, factIndex }
     currentPlanet = null
   } else {
-    // First planet — load instantly then warp in
     loadPlanetInstant(index, factIndex)
     currentPlanet.scale.setScalar(0.1)
     setGroupOpacity(currentPlanet, 0)
@@ -270,6 +304,122 @@ function loadPlanet(index, factIndex = 0) {
     planetTransition.phase = 'in'
     planetTransition.progress = 0
   }
+}
+
+// ─── Navigation actions ──────────────────────────────────────────────────────
+// Used by both mouse click (via handleInteraction) and VR buttons (X/Y)
+
+function navigateForward() {
+  if (!gameStarted) return
+
+  if (introText) {
+    forwardSound.play()
+    if (typewriter.active) {
+      completeTypewriter()
+    } else if (introTextState < 2) {
+      introTextState++
+      updateInteractiveIntroText(introText, introTextState, 0)
+      startTypewriter(introBodyTexts[introTextState], 'intro')
+    } else {
+      typewriter.active = false
+      fadeToScene(() => {
+        scene.remove(introText)
+        introText = null
+        currentIndex = 0
+        loadPlanet(currentIndex)
+      })
+    }
+  } else if (selectionMode) {
+    // Gaze-based selection in VR; mouse click handles this separately
+    const planet = getGazedPlanet()
+    if (planet) {
+      selectPlanet(planet.userData.planetName)
+    }
+  } else if (resultSprite) {
+    if (resultMessageIndex < resultMessages.length - 1) {
+      forwardSound.play()
+      resultMessageIndex++
+      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+    } else {
+      // Last result message — X returns home
+      location.reload()
+    }
+  } else if (currentText) {
+    const data = planets[currentIndex]
+    const totalFacts = data.facts.length
+    if (currentFactIndex < totalFacts - 1) {
+      if (currentFactIndex === totalFacts - 2) resultSound.play()
+      currentFactIndex++
+      updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+    } else if (currentIndex < planets.length - 1) {
+      forwardSound.play()
+      currentIndex++
+      loadPlanet(currentIndex, 0)
+    } else {
+      forwardSound.play()
+      fadeToScene(() => showPlanetSelection())
+    }
+  }
+}
+
+function navigateBackward() {
+  if (!gameStarted) return
+
+  if (introText) {
+    if (introTextState > 0) {
+      backSound.play()
+      introTextState = 0
+      typewriter.active = false
+      updateInteractiveIntroText(introText, introTextState, 0)
+      startTypewriter(introBodyTexts[introTextState], 'intro')
+    }
+  } else if (selectionMode) {
+    // Nothing to go back to from selection screen
+  } else if (resultSprite) {
+    if (resultMessageIndex > 0) {
+      backSound.play()
+      resultMessageIndex--
+      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+    }
+  } else if (currentText) {
+    const data = planets[currentIndex]
+    const totalFacts = data.facts.length
+    if (currentFactIndex > 0 || currentIndex > 0) backSound.play()
+    if (currentFactIndex > 0) {
+      currentFactIndex--
+      updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+    } else if (currentIndex > 0) {
+      currentIndex--
+      const prevData = planets[currentIndex]
+      loadPlanet(currentIndex, prevData.facts.length - 1)
+    }
+  }
+}
+
+// ─── Gaze-based planet selection (VR) ───────────────────────────────────────
+// Returns the planet whose center is closest to the camera's forward direction
+
+function getGazedPlanet() {
+  if (selectionPlanets.length === 0) return null
+  const cameraDir = new THREE.Vector3()
+  camera.getWorldDirection(cameraDir)
+  const cameraPos = new THREE.Vector3()
+  camera.getWorldPosition(cameraPos)
+
+  let bestPlanet = null
+  let bestDot = -Infinity
+
+  selectionPlanets.forEach(p => {
+    const toP = p.position.clone().sub(cameraPos).normalize()
+    const dot = toP.dot(cameraDir)
+    if (dot > bestDot) {
+      bestDot = dot
+      bestPlanet = p
+    }
+  })
+
+  // Must be roughly centered in view (within ~30°)
+  return bestDot > 0.85 ? bestPlanet : null
 }
 
 const introScreen = document.getElementById("introScreen")
@@ -299,24 +449,9 @@ volumeBtn.addEventListener('click', (event) => {
   volumeImg.alt = isMuted ? 'Sound off' : 'Sound on'
 })
 
-function fadeToScene(callback) {
-  // Fade to black
-  sceneFadeEl.classList.add('black')
-  setTimeout(() => {
-    // Execute the scene change while screen is black
-    callback()
-    // Fade back in
-    setTimeout(() => {
-      sceneFadeEl.classList.remove('black')
-    }, 50)
-  }, 500)
-}
-
 launchBtn.addEventListener("click", (event) => {
-  event.stopPropagation()  // Prevent click from bubbling up to window click handler
-  console.log('Launch button clicked')
+  event.stopPropagation()
 
-  // Trigger hyperspace flash transition
   hyperspaceEl.classList.add('active')
   hyperspaceEl.addEventListener('animationend', () => {
     hyperspaceEl.classList.remove('active')
@@ -326,61 +461,36 @@ launchBtn.addEventListener("click", (event) => {
   setTimeout(() => {
     introScreen.style.display = "none"
   }, 500)
-  
-  // Create and play space audio when launching
-  console.log('Creating space audio...')
+
   spaceAudio = createSpaceAudio()
-  console.log('Audio object created:', spaceAudio)
-  
-  // Resume audio context if needed
+
   if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
     const audioCtx = new (AudioContext || webkitAudioContext)();
-    audioCtx.resume().then(() => {
-      console.log('Audio context resumed')
-    }).catch(err => {
-      console.error('Failed to resume audio context:', err)
-    })
+    audioCtx.resume().catch(err => console.error('Failed to resume audio context:', err))
   }
-  
-  console.log('Attempting to play audio...')
+
   spaceAudio.play()
-  console.log('Audio play method called')
-  
-  // Show intro text before showing planets
-  console.log('Creating interactive intro text...')
+
   introText = createInteractiveIntroText(introTextState)
-  console.log('Interactive intro text created:', introText)
-  console.log('Intro text material:', introText.material)
-  console.log('Intro text map:', introText.material.map)
-  
-  // Position intro text using current layout (desktop or VR)
   introText.position.set(...curLayout().introPos)
   introText.scale.set(...curLayout().introScale)
   scene.add(introText)
-  console.log('Interactive intro text added to scene at position:', introText.position)
-  
-  // Show Planet Hop logo for 3D scenes
+
   showPlanetHopLogo()
-  
-  // Show volume button now that the game has started
+
   volumeBtn.style.display = 'flex'
   volumeBtn.style.alignItems = 'center'
   volumeBtn.style.justifyContent = 'center'
 
-  // Show VR button if WebXR is available
   if (vrButton) {
-    vrButton.style.display = 'block'
+    vrButton.classList.remove('vr-hidden')
   }
 
-  // Start typewriter for the first intro page
   startTypewriter(introBodyTexts[introTextState], 'intro')
-  
-  // Don't load the planet yet - wait for user click
-  
   gameStarted = true
 })
 
-// Raycaster for interactive text navigation
+// ─── Mouse raycaster ────────────────────────────────────────────────────────
 const raycaster = new THREE.Raycaster()
 const mouse = new THREE.Vector2()
 
@@ -408,260 +518,147 @@ window.addEventListener('mousemove', (event) => {
   }
 })
 
-// Click to interact with intro text or move to next planet - only after game has started
+// ─── Mouse click handler ─────────────────────────────────────────────────────
 window.addEventListener("click", (event) => {
-  if (gameStarted && introText) {
-    // Calculate mouse position in normalized device coordinates
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-    
-    // Update the picking ray with the camera and mouse position
-    raycaster.setFromCamera(mouse, camera)
-    
-    // Calculate objects intersecting the picking ray
+  if (!gameStarted) return
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+  raycaster.setFromCamera(mouse, camera)
+
+  if (introText) {
     const intersects = raycaster.intersectObject(introText)
-    
-    if (intersects.length > 0) {
-      // User clicked on the intro text
-      const intersection = intersects[0]
-      const uv = intersection.uv
-      
-      // Convert UV coordinates to canvas coordinates
-      const canvasWidth = 2560
-      const canvasHeight = 1280
-      const clickX = uv.x * canvasWidth
-      const clickY = (1 - uv.y) * canvasHeight
-      
-      // Check if clicked on navigation buttons (now at bottom)
-      // New arrow positions (2x scaled, bottomY = height - 160 = 1120)
-      // Back arrow: x=160→280, y=1040→1200
-      // Forward arrow: x=2280→2400, y=1040→1200
-      const backButtonArea = { x: 160, y: 1040, width: 120, height: 160 }
-      const forwardButtonArea = { x: canvasWidth - 280, y: 1040, width: 120, height: 160 }
-      
-      const inBackButton = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
-                          clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
-      
-      const inForwardButton = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
-                             clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
-      
-      if (inBackButton && introTextState > 0) {
-        // Go back to first state — always navigate immediately
-        backSound.play()
-        introTextState = 0
-        typewriter.active = false
-        updateInteractiveIntroText(introText, introTextState, 0)
-        startTypewriter(introBodyTexts[introTextState], 'intro')
-        console.log('Navigated back to state:', introTextState)
-      } else if (inForwardButton) {
-        forwardSound.play()
-        if (typewriter.active) {
-          // First click while typing: skip to full text
-          completeTypewriter()
-        } else if (introTextState < 2) {
-          // Go forward to next state
-          introTextState++
-          updateInteractiveIntroText(introText, introTextState, 0)
-          startTypewriter(introBodyTexts[introTextState], 'intro')
-          console.log('Navigated forward to state:', introTextState)
-        } else {
-          // On final state — fade to black, then show first planet
-          typewriter.active = false
-          fadeToScene(() => {
-            scene.remove(introText)
-            introText = null
-            currentIndex = 0
-            loadPlanet(currentIndex)
-          })
-        }
-      }
-      // If clicked on main text area, do nothing (keep current state)
-    }
-  } else if (gameStarted && selectionMode) {
-    // Handle planet selection click
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-    raycaster.setFromCamera(mouse, camera)
+    if (intersects.length === 0) return
+    const uv = intersects[0].uv
+    const clickX = uv.x * 2560
+    const clickY = (1 - uv.y) * 1280
 
+    const back = { x: 160, y: 1040, w: 120, h: 160 }
+    const fwd  = { x: 2280, y: 1040, w: 120, h: 160 }
+
+    const inBack = clickX >= back.x && clickX <= back.x + back.w && clickY >= back.y && clickY <= back.y + back.h
+    const inFwd  = clickX >= fwd.x  && clickX <= fwd.x  + fwd.w  && clickY >= fwd.y  && clickY <= fwd.y  + fwd.h
+
+    if (inBack) navigateBackward()
+    else if (inFwd) navigateForward()
+
+  } else if (selectionMode) {
     const intersects = raycaster.intersectObjects(selectionPlanets, true)
-    if (intersects.length > 0) {
-      // Walk up hierarchy to find the group that has planetName userData
-      let root = intersects[0].object
-      while (root && !root.userData.planetName) {
-        root = root.parent
-      }
-      if (!root) return
-      const { planetName, planetData } = root.userData
+    if (intersects.length === 0) return
+    let root = intersects[0].object
+    while (root && !root.userData.planetName) root = root.parent
+    if (root) selectPlanet(root.userData.planetName)
 
-      clearSelectionScreen()
-
-      // Play success sound for the correct planet choice
-      if (planetName === 'Mars') successSound.play()
-
-      // Build 3-message result sequence
-      const firstMessage = planetName === 'Mars'
-        ? "Correct! Humans may be able to live on Mars but only with technology and protection!"
-        : "Not quite. Most planets are too hot, too cold, or made of gas. Mars is one of the best options."
-
-      resultMessages = [
-        firstMessage,
-        "Now, the real mission is protecting Earth. Earth is our best home. It has liquid water, oxygen, forests, animals and a protective atmosphere.",
-        "We must work together to protect our planet. You can help by planting trees, using clean energy, walking or biking, reducing waste, and saving electricity. This is climate action."
-      ]
-      resultMessageIndex = 0
-
-      // Reset camera to intro-screen position so result box matches intro layout
-      camera.position.set(0, 1.6, 5)
-      controls.target.set(0, 0, 0)
-      controls.update()
-
-      resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
-      resultSprite.position.set(...curLayout().resultPos)
-      resultSprite.scale.set(...curLayout().resultScale)
-      scene.add(resultSprite)
-
-      // Show Planet Hop logo for result screens
-      showPlanetHopLogo()
-
-      // Show the Return Home button
-      homeBtn.style.display = 'block'
-    }
-  } else if (gameStarted && resultSprite) {
-    // Navigate result messages via arrows
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-    raycaster.setFromCamera(mouse, camera)
-
+  } else if (resultSprite) {
     const intersects = raycaster.intersectObject(resultSprite)
-    if (intersects.length > 0) {
-      const uv = intersects[0].uv
-      const canvasWidth = 2560
-      const canvasHeight = 1280
-      const clickX = uv.x * canvasWidth
-      const clickY = (1 - uv.y) * canvasHeight
+    if (intersects.length === 0) return
+    const uv = intersects[0].uv
+    const clickX = uv.x * 2560
+    const clickY = (1 - uv.y) * 1280
+    const { backButtonArea: b, forwardButtonArea: f } = resultSprite.userData
 
-      const { backButtonArea, forwardButtonArea } = resultSprite.userData
+    const inBack = clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
+    const inFwd  = clickX >= f.x && clickX <= f.x + f.width  && clickY >= f.y && clickY <= f.y + f.height
 
-      const inBack = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
-                     clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
-      const inForward = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
-                        clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
+    if (inBack) navigateBackward()
+    else if (inFwd) navigateForward()
 
-      if (inForward && resultMessageIndex < resultMessages.length - 1) {
-        forwardSound.play()
-        resultMessageIndex++
-        updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
-      } else if (inBack && resultMessageIndex > 0) {
-        backSound.play()
-        resultMessageIndex--
-        updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
-      }
-    }
-  } else if (gameStarted && currentText) {
-    // Navigate planets via arrows on the fact text box
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
-
-    raycaster.setFromCamera(mouse, camera)
+  } else if (currentText) {
     const intersects = raycaster.intersectObject(currentText)
+    if (intersects.length === 0) return
+    const uv = intersects[0].uv
+    const clickX = uv.x * 1280
+    const clickY = (1 - uv.y) * 720
+    const { backButtonArea: b, forwardButtonArea: f } = currentText.userData
 
-    if (intersects.length > 0) {
-      const uv = intersects[0].uv
-      const canvasWidth = 1280
-      const canvasHeight = 720
-      const clickX = uv.x * canvasWidth
-      const clickY = (1 - uv.y) * canvasHeight
+    const inBack = clickX >= b.x && clickX <= b.x + b.width && clickY >= b.y && clickY <= b.y + b.height
+    const inFwd  = clickX >= f.x && clickX <= f.x + f.width  && clickY >= f.y && clickY <= f.y + f.height
 
-      const { backButtonArea, forwardButtonArea } = currentText.userData
-
-      const inBack = clickX >= backButtonArea.x && clickX <= backButtonArea.x + backButtonArea.width &&
-                     clickY >= backButtonArea.y && clickY <= backButtonArea.y + backButtonArea.height
-
-      const inForward = clickX >= forwardButtonArea.x && clickX <= forwardButtonArea.x + forwardButtonArea.width &&
-                        clickY >= forwardButtonArea.y && clickY <= forwardButtonArea.y + forwardButtonArea.height
-
-      const data = planets[currentIndex]
-      const totalFacts = data.facts.length
-
-      if (inForward) {
-        if (currentFactIndex < totalFacts - 1) {
-          // Advancing to the last fact — play result sound; otherwise silent
-          if (currentFactIndex === totalFacts - 2) {
-            resultSound.play()
-          }
-          currentFactIndex++
-          updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
-        } else if (currentIndex < planets.length - 1) {
-          // Last fact of this planet — advance to next planet (play sound)
-          forwardSound.play()
-          currentIndex++
-          loadPlanet(currentIndex, 0)
-        } else {
-          // Last fact of last planet — fade to black, then show planet selection screen
-          forwardSound.play()
-          fadeToScene(() => showPlanetSelection())
-        }
-      } else if (inBack) {
-        if (currentFactIndex > 0 || currentIndex > 0) {
-          backSound.play()
-        }
-        if (currentFactIndex > 0) {
-          // Go to previous fact on same planet
-          currentFactIndex--
-          updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
-        } else if (currentIndex > 0) {
-          // Go to previous planet at its last fact
-          currentIndex--
-          const prevData = planets[currentIndex]
-          loadPlanet(currentIndex, prevData.facts.length - 1)
-        }
-      }
-    }
+    if (inBack) navigateBackward()
+    else if (inFwd) navigateForward()
   }
 })
 
+// ─── VR Button navigation (X/Y on Quest controllers) ────────────────────────
+// X (left button 4) or A (right button 4) = forward
+// Y (left button 5) or B (right button 5) = backward
+// Polled each frame; fires on press (not hold)
+
+const vrButtonPrev = { forward: false, backward: false, mute: false }
+
+function pollVRButtons() {
+  if (!isVRMode) return
+  const session = renderer.xr.getSession()
+  if (!session) return
+
+  let forwardPressed = false
+  let backwardPressed = false
+  let mutePressed = false
+
+  for (const source of session.inputSources) {
+    if (!source.gamepad) continue
+    const buttons = source.gamepad.buttons
+
+    // X (left[4]) or A (right[4]) = forward
+    if (buttons[4]?.pressed) forwardPressed = true
+    // Y (left[5]) or B (right[5]) = backward
+    if (buttons[5]?.pressed) backwardPressed = true
+    // Right thumbstick press (right[3]) = mute toggle
+    if (source.handedness === 'right' && buttons[3]?.pressed) mutePressed = true
+  }
+
+  // Rising-edge detection — fire once on press, not continuously while held
+  if (forwardPressed  && !vrButtonPrev.forward)  navigateForward()
+  if (backwardPressed && !vrButtonPrev.backward) navigateBackward()
+  if (mutePressed && !vrButtonPrev.mute) {
+    isMuted = !isMuted
+    Howler.mute(isMuted)
+  }
+
+  vrButtonPrev.forward  = forwardPressed
+  vrButtonPrev.backward = backwardPressed
+  vrButtonPrev.mute     = mutePressed
+}
+
+// ─── Render loop ─────────────────────────────────────────────────────────────
 renderer.setAnimationLoop(() => {
   if (currentPlanet) currentPlanet.rotation.y += 0.003
   if (planetTransition.outPlanet) planetTransition.outPlanet.rotation.y += 0.003
+
   // Selection planet rotation + hover scale effect
   const NORMAL_SCALE = curLayout().selScale
   const HOVER_SCALE = NORMAL_SCALE * 1.25
   selectionPlanets.forEach(p => {
     p.rotation.y += 0.005
     const target = p === hoveredSelectionPlanet ? HOVER_SCALE : NORMAL_SCALE
-    const current = p.scale.x
-    const next = current + (target - current) * 0.12
+    const next = p.scale.x + (target - p.scale.x) * 0.12
     p.scale.setScalar(next)
   })
+
   controls.update()
 
-  // --- subtle rotation for motion ---
-  closeStars.rotation.y += 0.0005
-  farStars.rotation.y += 0.0002
+  closeStars.rotation.y  += 0.0005
+  farStars.rotation.y    += 0.0002
   distantStars.rotation.y += 0.0001
   milkyWaySphere.rotation.y += 0.00005
 
-  // --- Planet warp-zoom transition ---
+  // Planet warp-zoom transition
   if (planetTransition.active) {
     planetTransition.progress += 1 / WARP_FRAMES
     const t = Math.min(planetTransition.progress, 1)
 
     if (planetTransition.phase === 'out') {
-      // Scale up and fade out old planet
       const targetScale = curLayout().planetScale
-      const scale = targetScale + t * (14 - targetScale)
-      planetTransition.outPlanet.scale.setScalar(scale)
+      planetTransition.outPlanet.scale.setScalar(targetScale + t * (14 - targetScale))
       setGroupOpacity(planetTransition.outPlanet, 1 - t)
 
       if (t >= 1) {
-        // Remove old planet and start warp-in with new planet
         scene.remove(planetTransition.outPlanet)
         planetTransition.outPlanet = null
 
         const { index, factIndex } = planetTransition.inData
         loadPlanetInstant(index, factIndex)
 
-        // Start new planet tiny and invisible
         currentPlanet.scale.setScalar(0.1)
         setGroupOpacity(currentPlanet, 0)
         currentText.visible = false
@@ -670,10 +667,8 @@ renderer.setAnimationLoop(() => {
         planetTransition.progress = 0
       }
     } else if (planetTransition.phase === 'in') {
-      // Scale up and fade in new planet
       const targetScale = curLayout().planetScale
-      const scale = 0.1 + t * (targetScale - 0.1)
-      currentPlanet.scale.setScalar(scale)
+      currentPlanet.scale.setScalar(0.1 + t * (targetScale - 0.1))
       setGroupOpacity(currentPlanet, t)
 
       if (t >= 1) {
@@ -686,7 +681,7 @@ renderer.setAnimationLoop(() => {
     }
   }
 
-  // --- Typewriter animation ---
+  // Typewriter animation
   if (typewriter.active) {
     typewriter.visibleChars = Math.min(
       typewriter.visibleChars + typewriter.charsPerFrame,
@@ -697,6 +692,9 @@ renderer.setAnimationLoop(() => {
       typewriter.active = false
     }
   }
+
+  // VR button polling (X = forward, Y = backward)
+  pollVRButtons()
 
   renderer.render(scene, camera)
 })

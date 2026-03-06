@@ -157,7 +157,9 @@ export function updateFactTextBox(sprite, factText, planetName, planetIndex, fac
   sprite.userData.factText = factText
 }
 
-export function createSelectionMessageBox() {
+export function createSelectionMessageBox(text) {
+  // Accept localized text; fall back to English if not provided
+  const lines = (text || "Explorer, you've seen all the planets.\nSelect the best possible future home.").split('\n')
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 2560
@@ -172,9 +174,9 @@ export function createSelectionMessageBox() {
   context.fillStyle = "lightblue"
   context.textAlign = "center"
   context.font = "bold 105px 'Space Grotesk', sans-serif"
-  context.fillText("Explorer, you've seen all the planets.", canvas.width / 2, 200)
+  context.fillText(lines[0] || "Explorer, you've seen all the planets.", canvas.width / 2, 200)
   context.font = "90px 'Space Grotesk', sans-serif"
-  context.fillText("Select the best possible future home.", canvas.width / 2, 360)
+  context.fillText(lines[1] || "Select the best possible future home.", canvas.width / 2, 360)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -364,7 +366,15 @@ export function updateResultBox(sprite, text, messageIndex, totalMessages = 3, v
   sprite.material.needsUpdate = true
 }
 
-export function createInteractiveIntroText(textState = 0, visibleChars = 0) {
+// Default English body texts — used as fallback if no localized array is passed
+const DEFAULT_INTRO_BODIES = [
+  "For many years, people burned too many fossil fuels, cut down forests, and polluted the air.",
+  "This caused climate change. There were huge storms, wildfires, floods, and droughts.",
+  "Earth is in danger. Explore space to find a new home. Your mission begins now!"
+]
+
+export function createInteractiveIntroText(textState = 0, visibleChars = 0, bodyTexts = null) {
+  const bodies = bodyTexts || DEFAULT_INTRO_BODIES
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
 
@@ -380,46 +390,18 @@ export function createInteractiveIntroText(textState = 0, visibleChars = 0) {
   context.lineWidth = 6
   context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
 
-  // Draw title (always present) - ONE THAT ACTUALLY WORKS
+  // Draw title (always present)
   context.fillStyle = "lightblue"
   context.font = "bold 120px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
   context.fillText("🚨 ALERT", canvas.width / 2, 200)
   context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
 
-  // Draw body text based on state
-  context.fillStyle = "lightblue"
-  context.font = "72px 'Space Grotesk', sans-serif"
-  
-  if (textState === 0) {
-    // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    // Wrap long text into multiple lines with tighter spacing
-    const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const displayIntroText0 = Number.isFinite(visibleChars) ? longText.slice(0, visibleChars) : longText
-    const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
-    const fontSize = 120
-    const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
-    
-    drawWrappedText(context, displayIntroText0, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  } else if (textState === 1) {
-    // Second state: Climate change message
-    const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
-    const displayIntroText1 = Number.isFinite(visibleChars) ? climateText.slice(0, visibleChars) : climateText
-    const maxWidth = canvas.width - 400 // Leave some padding
-    const fontSize = 120
-    const lineHeight = fontSize * 1.2
-    
-    drawWrappedText(context, displayIntroText1, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  } else {
-    // Third state: Mission message
-    const missionText = "Earth is in danger. Explore space to find a new home. Your mission begins now!"
-    const displayIntroText2 = Number.isFinite(visibleChars) ? missionText.slice(0, visibleChars) : missionText
-    const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
-    const fontSize = 120
-    const lineHeight = fontSize * 1.2
-    
-    drawWrappedText(context, displayIntroText2, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  }
+  // Draw localized body text for the current state
+  const bodyText = bodies[textState] || bodies[0]
+  const displayText = Number.isFinite(visibleChars) ? bodyText.slice(0, visibleChars) : bodyText
+  const lineHeight = textState === 0 ? 120 * 1.1 : 120 * 1.2
+  drawWrappedText(context, displayText, canvas.width / 2, 580, canvas.width - 400, 120, lineHeight)
 
   // Draw navigation buttons
   drawNavigationButtons(context, canvas.width, canvas.height, textState)
@@ -548,72 +530,37 @@ export function createVRInstructionsSprite() {
   return sprite
 }
 
-export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity) {
-  // Update the sprite's text state and recreate the texture
+export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity, bodyTexts = null) {
+  const bodies = bodyTexts || DEFAULT_INTRO_BODIES
   sprite.userData.textState = textState
-  
+
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
-  
   canvas.width = 2560
   canvas.height = 1280
 
-  // Draw background box with 60% opacity
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
-  
-  // Draw border
   context.strokeStyle = "lightblue"
   context.lineWidth = 6
   context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
 
-  // Draw title (always present)
   context.fillStyle = "lightblue"
   context.font = "bold 120px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
   context.fillText("🚨 ALERT", canvas.width / 2, 200)
   context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
 
-  // Draw body text based on state
-  context.fillStyle = "lightblue"
-  context.font = "72px 'Space Grotesk', sans-serif"
-  
-  if (textState === 0) {
-    // First state: "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    // Wrap long text into multiple lines with tighter spacing
-    const longText = "For many years, people burned too many fossil fuels, cut down forests, and polluted the air."
-    const displayUpdateText0 = Number.isFinite(visibleChars) ? longText.slice(0, visibleChars) : longText
-    const maxWidth = canvas.width - 400 // Reduce padding to make text more squished
-    const fontSize = 120
-    const lineHeight = fontSize * 1.1 // Reduce line height for tighter spacing
-    
-    drawWrappedText(context, displayUpdateText0, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  } else if (textState === 1) {
-    // Second state: Climate change message
-    const climateText = "This caused climate change. There were huge storms, wildfires, floods, and droughts."
-    const displayUpdateText1 = Number.isFinite(visibleChars) ? climateText.slice(0, visibleChars) : climateText
-    const maxWidth = canvas.width - 400 // Leave some padding
-    const fontSize = 120
-    const lineHeight = fontSize * 1.2
-    
-    drawWrappedText(context, displayUpdateText1, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  } else {
-    // Third state: Mission message
-    const missionText = "Earth is in danger. Explore space to find a new home. Your mission begins now!"
-    const displayUpdateText2 = Number.isFinite(visibleChars) ? missionText.slice(0, visibleChars) : missionText
-    const maxWidth = canvas.width - 400 // More padding to match visual appearance of climateText
-    const fontSize = 120
-    const lineHeight = fontSize * 1.2
-    
-    drawWrappedText(context, displayUpdateText2, canvas.width / 2, 580, maxWidth, fontSize, lineHeight)
-  }
+  // Draw localized body text for the current state
+  const bodyText = bodies[textState] || bodies[0]
+  const displayText = Number.isFinite(visibleChars) ? bodyText.slice(0, visibleChars) : bodyText
+  const lineHeight = textState === 0 ? 120 * 1.1 : 120 * 1.2
+  drawWrappedText(context, displayText, canvas.width / 2, 580, canvas.width - 400, 120, lineHeight)
 
-  // Draw navigation buttons
   drawNavigationButtons(context, canvas.width, canvas.height, textState)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
-  
   sprite.material.map = texture
   sprite.material.needsUpdate = true
 }

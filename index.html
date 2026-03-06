@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Solar XR Mission</title>
+  <title>Planet.Hop — A Space Adventure with a Climate Mission</title>
+  <meta name="description" content="Explore the solar system and find a new home for humanity in this interactive 3D space adventure for kids. Learn about climate change and the planets." />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -318,9 +319,13 @@
   </style>
 </head>
 <body>
-  <div id="planet-hop-logo">PLANET.HOP</div>
-  <button id="volume-btn" title="Toggle sound"><img src="/textures/audio_on.png" alt="Sound on" /></button>
-  <button id="home-btn">⟵ RETURN HOME</button>
+  <!-- Hidden live region: screen readers announce this text whenever it changes -->
+  <div id="sr-live" role="status" aria-live="polite" aria-atomic="true"
+       style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"></div>
+
+  <div id="planet-hop-logo" role="button" tabindex="0" aria-label="Planet Hop — return to home screen">PLANET.HOP</div>
+  <button id="volume-btn" title="Toggle sound" aria-label="Toggle sound on or off"><img src="/textures/audio_on.png" alt="Sound on" /></button>
+  <button id="home-btn" aria-label="Return to home screen">⟵ RETURN HOME</button>
   <div id="scene-fade"></div>
   <div id="hyperspace"></div>
   <div id="introScreen">

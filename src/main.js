@@ -2,8 +2,26 @@ import * as THREE from 'three'
 import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet, preloadPlanetTextures } from './planetFactory'
-import { planets } from './storyData'
+import { planets, introBodyTexts as introBodyTextsData, resultMessages as resultMessagesData, wrongPlanetMessages, selectionMessage } from './storyData'
 import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
+
+// ─── Language detection ───────────────────────────────────────────────────────
+// Reads the browser/device language setting; falls back to English for unsupported locales.
+const lang = (navigator.language || 'en').toLowerCase().startsWith('es') ? 'es' : 'en'
+document.documentElement.lang = lang
+
+// t() — picks the localized variant from a bilingual {en, es} object
+function t(obj) { return (obj[lang] ?? obj['en']) }
+
+// ─── Translate static HTML intro screen at page load ─────────────────────────
+if (lang === 'es') {
+  const subtitle = document.querySelector('.typing-text')
+  if (subtitle) subtitle.textContent = 'UNA AVENTURA ESPACIAL CON UNA MISIÓN CLIMÁTICA'
+  const launchBtnEl = document.getElementById('launchBtn')
+  if (launchBtnEl) launchBtnEl.textContent = 'LANZAR'
+  const homeBtnEl = document.getElementById('home-btn')
+  if (homeBtnEl) homeBtnEl.textContent = '⟵ VOLVER AL INICIO'
+}
 
 const forwardSound = new Howl({ src: ['/audio/front_arrow.mp3'], html5: true })
 const backSound = new Howl({ src: ['/audio/back_arrow.mp3'], html5: true })
@@ -104,12 +122,10 @@ let vrInstructionsSprite = null  // shown when entering VR, dismissed with X
 let planetHopLogo = null  // logo is the HTML #planet-hop-logo element
 const logoEl = document.getElementById('planet-hop-logo')
 
+// Localized intro body texts (resolved once from storyData based on detected language)
+const introBodyTexts = t(introBodyTextsData)
+
 // Typewriter state
-const introBodyTexts = [
-  "For many years, people burned too many fossil fuels, cut down forests, and polluted the air.",
-  "This caused climate change. There were huge storms, wildfires, floods, and droughts.",
-  "Earth is in danger. Explore space to find a new home. Your mission begins now!"
-]
 const typewriter = {
   active: false,
   fullText: '',
@@ -128,10 +144,11 @@ function startTypewriter(text, mode) {
 function applyTypewriterFrame() {
   const chars = typewriter.visibleChars
   if (typewriter.mode === 'intro' && introText) {
-    updateInteractiveIntroText(introText, introTextState, chars)
+    updateInteractiveIntroText(introText, introTextState, chars, introBodyTexts)
   } else if (typewriter.mode === 'fact' && currentText) {
     const data = planets[currentIndex]
-    updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, data.facts.length, chars)
+    const facts = t(data.facts)
+    updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, facts.length, chars)
   } else if (typewriter.mode === 'result' && resultSprite) {
     updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length, chars)
   }
@@ -264,7 +281,7 @@ function showPlanetSelection() {
     controls.update()
   }
 
-  selectionMessageSprite = createSelectionMessageBox()
+  selectionMessageSprite = createSelectionMessageBox(t(selectionMessage))
   selectionMessageSprite.position.set(0, lay.selMsgY, lay.selZ)
   selectionMessageSprite.scale.set(...lay.selMsgScale)
   scene.add(selectionMessageSprite)
@@ -319,15 +336,9 @@ function selectPlanet(planetName) {
   clearSelectionScreen()
   if (planetName === 'Mars') successSound.play()
 
-  const firstMessage = planetName === 'Mars'
-    ? "Correct! Humans may be able to live on Mars but only with technology and protection!"
-    : "Not quite. Most planets are too hot, too cold, or made of gas. Mars is one of the best options."
-
-  resultMessages = [
-    firstMessage,
-    "Now, the real mission is protecting Earth. Earth is our best home. It has liquid water, oxygen, forests, animals and a protective atmosphere.",
-    "We must work together to protect our planet. You can help by planting trees, using clean energy, walking or biking, reducing waste, and saving electricity. This is climate action."
-  ]
+  // Use localized result messages from storyData
+  const localizedResults = t(planetName === 'Mars' ? resultMessagesData : wrongPlanetMessages)
+  resultMessages = [...localizedResults]
   resultMessageIndex = 0
 
   camera.position.set(0, 1.6, 5)
@@ -353,7 +364,8 @@ function loadPlanetInstant(index, factIndex = 0) {
   currentPlanet.scale.setScalar(lay.planetScale)
   scene.add(currentPlanet)
 
-  currentText = createFactTextBox(data.facts[factIndex], data.name, index, factIndex, data.facts.length)
+  const facts = t(data.facts)
+  currentText = createFactTextBox(facts[factIndex], data.name, index, factIndex, facts.length)
   currentText.position.set(...lay.factPos)
   currentText.scale.set(...lay.factScale)
   scene.add(currentText)
@@ -407,10 +419,12 @@ function navigateForward() {
     forwardSound.play()
     if (typewriter.active) {
       completeTypewriter()
+      announceToScreenReader(introBodyTexts[introTextState])
     } else if (introTextState < 2) {
       introTextState++
-      updateInteractiveIntroText(introText, introTextState, 0)
+      updateInteractiveIntroText(introText, introTextState, 0, introBodyTexts)
       startTypewriter(introBodyTexts[introTextState], 'intro')
+      announceToScreenReader(introBodyTexts[introTextState])
     } else {
       typewriter.active = false
       fadeToScene(() => {
@@ -431,24 +445,30 @@ function navigateForward() {
       forwardSound.play()
       resultMessageIndex++
       updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+      announceToScreenReader(resultMessages[resultMessageIndex])
     } else {
       // Last result message — X returns home
       location.reload()
     }
   } else if (currentText) {
     const data = planets[currentIndex]
-    const totalFacts = data.facts.length
+    const facts = t(data.facts)
+    const totalFacts = facts.length
     if (currentFactIndex < totalFacts - 1) {
       if (currentFactIndex === totalFacts - 2) resultSound.play()
       currentFactIndex++
-      updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+      updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+      announceToScreenReader(`${data.name}. ${facts[currentFactIndex]}`)
     } else if (currentIndex < planets.length - 1) {
       forwardSound.play()
       currentIndex++
       loadPlanet(currentIndex, 0)
     } else {
       forwardSound.play()
-      fadeToScene(() => showPlanetSelection())
+      fadeToScene(() => {
+        showPlanetSelection()
+        announceToScreenReader(t(selectionMessage))
+      })
     }
   }
 }
@@ -488,15 +508,16 @@ function navigateBackward() {
     }
   } else if (currentText) {
     const data = planets[currentIndex]
-    const totalFacts = data.facts.length
+    const facts = t(data.facts)
+    const totalFacts = facts.length
     if (currentFactIndex > 0 || currentIndex > 0) backSound.play()
     if (currentFactIndex > 0) {
       currentFactIndex--
-      updateFactTextBox(currentText, data.facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+      updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
     } else if (currentIndex > 0) {
       currentIndex--
       const prevData = planets[currentIndex]
-      loadPlanet(currentIndex, prevData.facts.length - 1)
+      loadPlanet(currentIndex, t(prevData.facts).length - 1)
     }
   }
 }
@@ -529,6 +550,16 @@ function getGazedPlanet() {
 
 const introScreen = document.getElementById("introScreen")
 const launchBtn = document.getElementById("launchBtn")
+const srLive = document.getElementById("sr-live")
+
+// ─── Screen reader helper ─────────────────────────────────────────────────
+// Updates the aria-live region so screen readers announce the current content.
+function announceToScreenReader(text) {
+  if (!srLive) return
+  // Clear then set — some screen readers require the content to actually change
+  srLive.textContent = ''
+  requestAnimationFrame(() => { srLive.textContent = text })
+}
 
 let gameStarted = false
 let spaceAudio
@@ -575,7 +606,7 @@ launchBtn.addEventListener("click", (event) => {
 
   spaceAudio.play()
 
-  introText = createInteractiveIntroText(introTextState)
+  introText = createInteractiveIntroText(introTextState, 0, introBodyTexts)
   introText.position.set(...curLayout().introPos)
   introText.scale.set(...curLayout().introScale)
   scene.add(introText)
@@ -591,7 +622,12 @@ launchBtn.addEventListener("click", (event) => {
   }
 
   startTypewriter(introBodyTexts[introTextState], 'intro')
+  announceToScreenReader("Alert: Earth has been badly damaged. " + introBodyTexts[0])
   gameStarted = true
+
+  // Give the canvas an accessible label so screen readers identify it
+  renderer.domElement.setAttribute('role', 'application')
+  renderer.domElement.setAttribute('aria-label', 'Planet Hop — interactive 3D space exploration. Use arrow keys or tap the left and right edges to navigate.')
 })
 
 // Re-apply layout on orientation change / window resize (mobile rotation etc.)
@@ -717,6 +753,22 @@ window.addEventListener("touchend", (event) => {
     else if (x > 0.80) navigateForward()
   }
 }, { passive: true })
+
+// ─── Keyboard navigation (← → arrow keys, Space) ─────────────────────────
+// Allows keyboard-only users to navigate through the experience.
+window.addEventListener('keydown', (event) => {
+  if (!gameStarted) return
+  // Don't hijack input when an HTML element has focus (e.g. a button)
+  if (document.activeElement && document.activeElement !== document.body) return
+
+  if (event.key === 'ArrowRight' || event.key === ' ') {
+    event.preventDefault()
+    navigateForward()
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    navigateBackward()
+  }
+})
 
 // ─── VR Button navigation (X/Y on Quest controllers) ────────────────────────
 // X (left button 4) or A (right button 4) = forward

@@ -35,11 +35,11 @@ const VR_LAYOUT = {
 }
 // Mobile portrait layout — everything centered in x, stacked vertically
 const MOBILE_LAYOUT = {
-  introPos:      [0, 0.8, -1.5],  introScale:    [3.5, 1.75, 1],
-  planetPos:     [0, 1.2, -2],    planetScale:   1.0,
-  factPos:       [0, -1.6, -1.5], factScale:     [3.5, 2.0, 1],
+  introPos:      [0, 0.8, -1.5],  introScale:    [4.5, 2.25, 1],
+  planetPos:     [0, 1.4, -2],    planetScale:   1.3,
+  factPos:       [0, -2.0, -1.5], factScale:     [4.5, 2.5, 1],
   resultPos:     [0, 0.8, -1.5],  resultScale:   [3.5, 1.75, 1],
-  selZ:          -2,   selScale:  0.7,  selSpacing: 1.8,
+  selZ:          -2,   selScale:  0.7,  selSpacing: 2.3,
   // 2-row planet selection: row1 = first 4 planets, row2 = remaining 3
   selRow1Y:      1.4,  selRow1LabelY:  0.1,
   selRow2Y:     -1.6,  selRow2LabelY: -2.9,
@@ -64,10 +64,14 @@ renderer.xr.addEventListener('sessionstart', () => {
     vrInstructionsSprite = createVRInstructionsSprite()
     vrInstructionsSprite.position.set(...VR_LAYOUT.introPos)
     scene.add(vrInstructionsSprite)
-    // Hide whatever content is currently showing so it doesn't overlap
-    if (introText) introText.visible = false
-    if (currentText) currentText.visible = false
-    if (resultSprite) resultSprite.visible = false
+    // Hide ALL current scene content so only the VR instructions show
+    if (introText)              introText.visible = false
+    if (currentText)            currentText.visible = false
+    if (currentPlanet)          currentPlanet.visible = false
+    if (resultSprite)           resultSprite.visible = false
+    selectionPlanets.forEach(p  => p.visible = false)
+    selectionNameLabels.forEach(l => l.visible = false)
+    if (selectionMessageSprite) selectionMessageSprite.visible = false
   }
 })
 renderer.xr.addEventListener('sessionend', () => {
@@ -389,9 +393,13 @@ function navigateForward() {
   if (vrInstructionsSprite) {
     scene.remove(vrInstructionsSprite)
     vrInstructionsSprite = null
-    if (introText) introText.visible = true
-    if (currentText) currentText.visible = true
-    if (resultSprite) resultSprite.visible = true
+    if (introText)              introText.visible = true
+    if (currentText)            currentText.visible = true
+    if (currentPlanet)          currentPlanet.visible = true
+    if (resultSprite)           resultSprite.visible = true
+    selectionPlanets.forEach(p  => p.visible = true)
+    selectionNameLabels.forEach(l => l.visible = true)
+    if (selectionMessageSprite) selectionMessageSprite.visible = true
     return
   }
 
@@ -452,9 +460,13 @@ function navigateBackward() {
   if (vrInstructionsSprite) {
     scene.remove(vrInstructionsSprite)
     vrInstructionsSprite = null
-    if (introText) introText.visible = true
-    if (currentText) currentText.visible = true
-    if (resultSprite) resultSprite.visible = true
+    if (introText)              introText.visible = true
+    if (currentText)            currentText.visible = true
+    if (currentPlanet)          currentPlanet.visible = true
+    if (resultSprite)           resultSprite.visible = true
+    selectionPlanets.forEach(p  => p.visible = true)
+    selectionNameLabels.forEach(l => l.visible = true)
+    if (selectionMessageSprite) selectionMessageSprite.visible = true
     return
   }
 
@@ -511,8 +523,8 @@ function getGazedPlanet() {
     }
   })
 
-  // Must be roughly centered in view (within ~30°)
-  return bestDot > 0.85 ? bestPlanet : null
+  // Must be roughly centered in view (within ~46°) — forgiving enough for VR head-tracking
+  return bestDot > 0.70 ? bestPlanet : null
 }
 
 const introScreen = document.getElementById("introScreen")

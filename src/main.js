@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
-import { createPlanet } from './planetFactory'
+import { createPlanet, preloadPlanetTextures } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
 
@@ -39,12 +39,12 @@ const MOBILE_LAYOUT = {
   planetPos:     [0, 1.2, -2],    planetScale:   1.0,
   factPos:       [0, -1.6, -1.5], factScale:     [3.5, 2.0, 1],
   resultPos:     [0, 0.8, -1.5],  resultScale:   [3.5, 1.75, 1],
-  selZ:          -2,   selScale:  0.7,  selSpacing: 1.4,
+  selZ:          -2,   selScale:  0.7,  selSpacing: 1.8,
   // 2-row planet selection: row1 = first 4 planets, row2 = remaining 3
   selRow1Y:      1.4,  selRow1LabelY:  0.1,
-  selRow2Y:     -0.9,  selRow2LabelY: -2.2,
-  selPlanetY:    0.8,  selLabelY:     -0.5, selMsgY:   3.2,
-  selMsgScale:   [6.5, 1.5, 1],   selLabelScale: [1.2, 0.33, 1]
+  selRow2Y:     -1.6,  selRow2LabelY: -2.9,
+  selPlanetY:    0.8,  selLabelY:     -0.5, selMsgY:   4.2,
+  selMsgScale:   [8.0, 2.0, 1],   selLabelScale: [1.2, 0.33, 1]
 }
 const MOBILE_ROW1_COUNT = 4   // first N planets go on row 1; rest on row 2
 function isMobileView() { return window.innerWidth < 768 }
@@ -75,6 +75,10 @@ renderer.xr.addEventListener('sessionend', () => {
   isVRMode = false
   applyLayout()
 })
+
+// Preload all planet textures immediately so they're cached before the first animation plays.
+// This runs in the background while the intro screen and story panels are showing.
+preloadPlanetTextures(planets)
 
 // Create stars + Milky Way
 const { milkyWaySphere, closeStars, farStars, distantStars } = createStarfield(scene)

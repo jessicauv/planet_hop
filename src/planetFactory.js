@@ -2,6 +2,22 @@ import * as THREE from 'three'
 
 const loader = new THREE.TextureLoader()
 
+// Cache of pre-loaded textures keyed by URL.
+// Populated by preloadPlanetTextures() at startup so all textures are ready
+// before the first planet animation plays.
+const textureCache = new Map()
+
+export function preloadPlanetTextures(planetsData) {
+  planetsData.forEach(planet => {
+    if (!textureCache.has(planet.texture)) {
+      const tex = loader.load(planet.texture)
+      tex.anisotropy = 16
+      tex.colorSpace = THREE.SRGBColorSpace
+      textureCache.set(planet.texture, tex)
+    }
+  })
+}
+
 function createRingTexture(colorStops) {
   const size = 512
   const canvas = document.createElement('canvas')
@@ -49,9 +65,14 @@ export function createPlanet(data) {
 
   const geometry = new THREE.SphereGeometry(data.size, 64, 64)
 
-  const texture = loader.load(data.texture)
-  texture.anisotropy = 16   // Max anisotropy for crisp texture at oblique angles
-  texture.colorSpace = THREE.SRGBColorSpace
+  // Use the pre-loaded cached texture if available; fall back to loading on demand.
+  let texture = textureCache.get(data.texture)
+  if (!texture) {
+    texture = loader.load(data.texture)
+    texture.anisotropy = 16
+    texture.colorSpace = THREE.SRGBColorSpace
+    textureCache.set(data.texture, texture)
+  }
 
   const material = new THREE.MeshStandardMaterial({
     map: texture,

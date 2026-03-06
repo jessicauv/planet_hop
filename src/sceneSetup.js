@@ -91,6 +91,7 @@ export function createSpaceAudio() {
   
   const sound = new Howl({
     src: ['/audio/space.mp3'],
+    html5: true,   // Use HTML5 Audio for reliable mobile playback (bypasses AudioContext lock)
     loop: true,
     volume: 0.1,
     onload: () => {

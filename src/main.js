@@ -5,10 +5,10 @@ import { createPlanet } from './planetFactory'
 import { planets } from './storyData'
 import { createTextSprite, createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createPlanetHopLogo, createVRInstructionsSprite } from './uiPanel'
 
-const forwardSound = new Howl({ src: ['/audio/front_arrow.mp3'] })
-const backSound = new Howl({ src: ['/audio/back_arrow.mp3'] })
-const resultSound = new Howl({ src: ['/audio/result.mp3'] })
-const successSound = new Howl({ src: ['/audio/success.mp3'] })
+const forwardSound = new Howl({ src: ['/audio/front_arrow.mp3'], html5: true })
+const backSound = new Howl({ src: ['/audio/back_arrow.mp3'], html5: true })
+const resultSound = new Howl({ src: ['/audio/result.mp3'], html5: true })
+const successSound = new Howl({ src: ['/audio/success.mp3'], html5: true })
 
 
 const { scene, camera, renderer, controls, vrButton } = createScene()
@@ -515,12 +515,6 @@ launchBtn.addEventListener("click", (event) => {
 
   spaceAudio = createSpaceAudio()
 
-  // Resume Howler's own AudioContext — this is what actually unlocks audio on iOS Safari.
-  // (Creating a separate AudioContext manually does NOT unlock Howler's internal one.)
-  if (Howler.ctx && Howler.ctx.state === 'suspended') {
-    Howler.ctx.resume().catch(err => console.error('Failed to resume Howler audio context:', err))
-  }
-
   spaceAudio.play()
 
   introText = createInteractiveIntroText(introTextState)
@@ -618,6 +612,47 @@ window.addEventListener("click", (event) => {
     else if (x > 0.80) navigateForward()
   }
 })
+
+// ─── iOS Safari touch fallback ────────────────────────────────────────────
+// Safari only fires 'click' on interactive elements (cursor:pointer).
+// OrbitControls overrides the canvas cursor via inline style, breaking that
+// heuristic. touchend fires unconditionally, so we use it as a reliable fallback.
+window.addEventListener("touchend", (event) => {
+  if (!gameStarted) return
+  if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
+  if (event.changedTouches.length === 0) return
+
+  const touch = event.changedTouches[0]
+  mouse.x = (touch.clientX / window.innerWidth) * 2 - 1
+  mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1
+  raycaster.setFromCamera(mouse, camera)
+
+  if (introText) {
+    const hits = raycaster.intersectObject(introText)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
+  } else if (selectionMode) {
+    const hits = raycaster.intersectObjects(selectionPlanets, true)
+    if (hits.length === 0) return
+    let root = hits[0].object
+    while (root && !root.userData.planetName) root = root.parent
+    if (root) selectPlanet(root.userData.planetName)
+  } else if (resultSprite) {
+    const hits = raycaster.intersectObject(resultSprite)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
+  } else if (currentText) {
+    const hits = raycaster.intersectObject(currentText)
+    if (hits.length === 0) return
+    const { x } = hits[0].uv
+    if (x < 0.20) navigateBackward()
+    else if (x > 0.80) navigateForward()
+  }
+}, { passive: true })
 
 // ─── VR Button navigation (X/Y on Quest controllers) ────────────────────────
 // X (left button 4) or A (right button 4) = forward

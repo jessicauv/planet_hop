@@ -383,6 +383,37 @@
         .resource-link { font-size: 14px; padding: 12px 14px; }
     }
 
+    /* ─── Look-around hint — top-center, shown after launch, hidden in VR ── */
+    #look-hint {
+        display: none;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 30;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 13px;
+        color: lightblue;
+        letter-spacing: 0.5px;
+        background: rgba(0, 0, 40, 0.65);
+        border: 1px solid rgba(173, 216, 230, 0.35);
+        border-radius: 20px;
+        padding: 7px 18px;
+        pointer-events: none;
+        white-space: nowrap;
+        box-shadow: 0 0 10px rgba(100, 180, 255, 0.15);
+    }
+
+    /* Mobile: hide desktop span, show touch span */
+    #look-hint .hint-desktop { display: inline; }
+    #look-hint .hint-mobile  { display: none;   }
+
+    @media (max-width: 768px) {
+        #look-hint { font-size: 12px; padding: 6px 14px; }
+        #look-hint .hint-desktop { display: none;   }
+        #look-hint .hint-mobile  { display: inline; }
+    }
+
     /* Fade to black scene transition */
     #scene-fade {
         position: fixed;
@@ -435,6 +466,11 @@
   <div id="planet-hop-logo" role="button" tabindex="0" aria-label="Planet Hop — return to home screen">PLANET.HOP</div>
   <button id="volume-btn" title="Toggle sound" aria-label="Toggle sound on or off"><img src="/textures/audio_on.png" alt="Sound on" /></button>
   <button id="home-btn" aria-label="Return to home screen">⟵ RETURN HOME</button>
+  <!-- Look-around hint — shown after launch, hidden in VR -->
+  <div id="look-hint" aria-hidden="true">
+    <span class="hint-desktop">🖱 Move your mouse to look around</span>
+    <span class="hint-mobile">👆 Drag to look around</span>
+  </div>
   <div id="scene-fade"></div>
   <div id="hyperspace"></div>
   <div id="introScreen">

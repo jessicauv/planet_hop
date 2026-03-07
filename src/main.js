@@ -76,6 +76,8 @@ function curLayout() {
 renderer.xr.addEventListener('sessionstart', () => {
   controls.enabled = false
   isVRMode = true
+  // Hide look-around hint — it's meaningless inside a VR headset
+  lookHintEl.style.display = 'none'
   applyLayout()
   // Show VR controls instructions — only if the game has launched
   if (gameStarted) {
@@ -107,6 +109,8 @@ renderer.xr.addEventListener('sessionend', () => {
   // If resources VR sprite was showing, remove it and restore the HTML overlay
   if (resourcesSprite) { scene.remove(resourcesSprite); resourcesSprite = null }
   if (resourcesPanelOpen) resourcesPanelEl.style.display = 'block'
+  // Restore look-around hint now that we're back in non-VR mode
+  if (gameStarted) lookHintEl.style.display = 'block'
   applyLayout()
 })
 
@@ -287,7 +291,7 @@ function fadeToScene(callback) {
 }
 
 function showPlanetSelection() {
-  hidePlanetHopLogo()
+  hidePlanetHopLogo()   // briefly hidden during fade; restored below after planets are added
 
   if (currentPlanet) { scene.remove(currentPlanet); currentPlanet = null }
   if (currentText) { scene.remove(currentText); currentText = null }
@@ -341,6 +345,7 @@ function showPlanetSelection() {
   })
 
   selectionMode = true
+  showPlanetHopLogo()
 }
 
 function clearSelectionScreen() {
@@ -639,6 +644,15 @@ const hyperspaceEl = document.getElementById('hyperspace')
 const sceneFadeEl = document.getElementById('scene-fade')
 const volumeBtn = document.getElementById('volume-btn')
 const homeBtn = document.getElementById('home-btn')
+const lookHintEl = document.getElementById('look-hint')
+
+// Apply localized text to the look-around hint spans
+if (lang === 'es') {
+  const hintDesktop = lookHintEl.querySelector('.hint-desktop')
+  const hintMobile  = lookHintEl.querySelector('.hint-mobile')
+  if (hintDesktop) hintDesktop.textContent = '🖱 Mueve el cursor para mirar'
+  if (hintMobile)  hintMobile.textContent  = '👆 Arrastra para mirar'
+}
 
 logoEl.addEventListener('click', () => {
   location.reload()
@@ -696,6 +710,9 @@ launchBtn.addEventListener("click", (event) => {
   if (vrButton) {
     vrButton.classList.remove('vr-hidden')
   }
+
+  // Show look-around hint (non-VR only; VR session hides it via sessionstart)
+  lookHintEl.style.display = 'block'
 
   startTypewriter(introBodyTexts[introTextState], 'intro')
   announceToScreenReader("Alert: Earth has been badly damaged. " + introBodyTexts[0])

@@ -409,9 +409,24 @@
     #look-hint .hint-mobile  { display: none;   }
 
     @media (max-width: 768px) {
-        #look-hint { font-size: 12px; padding: 6px 14px; }
+        #look-hint {
+            font-size: 12px;
+            padding: 5px 12px;
+            /* Sit below the top-left Planet.Hop logo */
+            top: 52px;
+            left: 24px;
+            right: auto;
+            transform: none;
+        }
         #look-hint .hint-desktop { display: none;   }
         #look-hint .hint-mobile  { display: inline; }
+    }
+
+    @media (max-width: 480px) {
+        #look-hint {
+            top: 42px;
+            left: 16px;
+        }
     }
 
     /* Fade to black scene transition */

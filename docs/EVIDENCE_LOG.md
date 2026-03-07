@@ -11,7 +11,7 @@
 | **Howler.js** | Audio management for sound effects and background music | https://howlerjs.com | Code Library | MIT License | v2.2.4 |
 | **WebXR Button** | VR support for immersive headset experiences | https://threejs.org/examples/jsm/webxr/VRButton.js | Code Library | MIT License | Three.js examples |
 | **OrbitControls** | Camera controls for desktop/mobile interaction | https://threejs.org/examples/jsm/controls/OrbitControls.js | Code Library | MIT License | Three.js examples |
-| **Solar System Scope Textures** | Realistic planet textures for Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune | https://www.solarsystemscope.com/textures/ | Visual Assets | Free for educational use with attribution | High-resolution NASA-based textures |
+| **Solar System Scope Textures** | Realistic planet textures for Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune | https://www.solarsystemscope.com/textures/ | Visual Assets | Attribution 4.0 (CC BY 4.0) | High-resolution NASA-based textures |
 | **Space Blueberry Picking** | Background music for immersive experience | https://freesound.org/people/Romariogrande/sounds/599285/ | Audio | Creative Commons 0 (CC0) | No attribution required |
 | **sine up flutter beep.wav** | UI interaction sound effect | https://freesound.org/people/Mossy4/sounds/546553/ | Audio | Attribution 4.0 (CC BY 4.0) | Button press feedback - forward arrow press|
 | **BEEP.wav** | UI interaction sound effect | https://freesound.org/people/anthonychartier2020/sounds/599285/ | Audio | Attribution 4.0 (CC BY 4.0) | Button press feedback - backward arrow press|

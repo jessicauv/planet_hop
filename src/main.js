@@ -3,7 +3,7 @@ import { Howl, Howler } from 'howler'
 import { createScene, createStarfield, createSpaceAudio } from './sceneSetup'
 import { createPlanet, preloadPlanetTextures } from './planetFactory'
 import { planets, introBodyTexts as introBodyTextsData, resultMessages as resultMessagesData, wrongPlanetMessages, selectionMessage } from './storyData'
-import { createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createVRInstructionsSprite } from './uiPanel'
+import { createInteractiveIntroText, updateInteractiveIntroText, createFactTextBox, updateFactTextBox, createSelectionMessageBox, createNameLabel, createResultBox, updateResultBox, createResourcesBox, createVRInstructionsSprite } from './uiPanel'
 
 // ─── Language detection ───────────────────────────────────────────────────────
 // Reads the browser/device language setting; falls back to English for unsupported locales.
@@ -87,6 +87,15 @@ renderer.xr.addEventListener('sessionstart', () => {
     if (currentText)            currentText.visible = false
     if (currentPlanet)          currentPlanet.visible = false
     if (resultSprite)           resultSprite.visible = false
+    // If resources HTML panel was showing, swap it for the VR canvas sprite
+    if (resourcesPanelOpen) {
+      resourcesPanelEl.style.display = 'none'
+      resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES)
+      resourcesSprite.position.set(...VR_LAYOUT.resultPos)
+      resourcesSprite.scale.set(...VR_LAYOUT.resultScale)
+      scene.add(resourcesSprite)
+      resourcesSprite.visible = false  // hidden behind VR instructions
+    }
     selectionPlanets.forEach(p  => p.visible = false)
     selectionNameLabels.forEach(l => l.visible = false)
     if (selectionMessageSprite) selectionMessageSprite.visible = false
@@ -95,6 +104,9 @@ renderer.xr.addEventListener('sessionstart', () => {
 renderer.xr.addEventListener('sessionend', () => {
   controls.enabled = true
   isVRMode = false
+  // If resources VR sprite was showing, remove it and restore the HTML overlay
+  if (resourcesSprite) { scene.remove(resourcesSprite); resourcesSprite = null }
+  if (resourcesPanelOpen) resourcesPanelEl.style.display = 'block'
   applyLayout()
 })
 
@@ -120,6 +132,15 @@ let resultMessages = []
 let resultMessageIndex = 0
 let vrInstructionsSprite = null  // shown when entering VR, dismissed with X
 const logoEl = document.getElementById('planet-hop-logo')
+
+// ─── Resources panel state ────────────────────────────────────────────────────
+// TOTAL_RESULT_MESSAGES = 3 text slides + 1 resources slide
+// The dot indicators on all result slides show 4 dots so users see the full journey.
+const TOTAL_RESULT_MESSAGES = 4
+let resourcesPanelOpen = false
+let resourcesSprite = null      // VR-only canvas sprite; null on desktop/mobile
+const resourcesPanelEl = document.getElementById('resources-panel')
+const resourcesBackBtn = document.getElementById('resources-back-btn')
 
 // Localized intro body texts (resolved once from storyData based on detected language)
 const introBodyTexts = t(introBodyTextsData)
@@ -149,7 +170,7 @@ function applyTypewriterFrame() {
     const facts = t(data.facts)
     updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, facts.length, chars)
   } else if (typewriter.mode === 'result' && resultSprite) {
-    updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length, chars)
+    updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, TOTAL_RESULT_MESSAGES, chars)
   }
 }
 
@@ -344,7 +365,7 @@ function selectPlanet(planetName) {
   controls.target.set(0, 0, 0)
   controls.update()
 
-  resultSprite = createResultBox(resultMessages[0], 0, resultMessages.length)
+  resultSprite = createResultBox(resultMessages[0], 0, TOTAL_RESULT_MESSAGES)
   resultSprite.position.set(...curLayout().resultPos)
   resultSprite.scale.set(...curLayout().resultScale)
   scene.add(resultSprite)
@@ -394,6 +415,39 @@ function loadPlanet(index, factIndex = 0) {
   }
 }
 
+// ─── Resources panel open / close ────────────────────────────────────────────
+
+function openResourcesPanel() {
+  resourcesPanelOpen = true
+  if (isVRMode) {
+    // VR: show canvas sprite, hide result sprite
+    if (resultSprite) resultSprite.visible = false
+    resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES)
+    resourcesSprite.position.set(...curLayout().resultPos)
+    resourcesSprite.scale.set(...curLayout().resultScale)
+    scene.add(resourcesSprite)
+  } else {
+    // Desktop/Mobile: show HTML overlay, hide result sprite
+    if (resultSprite) resultSprite.visible = false
+    resourcesPanelEl.style.display = 'block'
+    announceToScreenReader('Discover more ways to help protect Earth with these resources. Climate Kids Activity Book. Earth Rangers Podcast. The Great Green Wall Initiative.')
+  }
+}
+
+function closeResourcesPanel() {
+  resourcesPanelOpen = false
+  if (isVRMode) {
+    if (resourcesSprite) { scene.remove(resourcesSprite); resourcesSprite = null }
+  } else {
+    resourcesPanelEl.style.display = 'none'
+  }
+  // Restore result sprite at last text message
+  if (resultSprite) {
+    updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, TOTAL_RESULT_MESSAGES)
+    resultSprite.visible = true
+  }
+}
+
 // ─── Navigation actions ──────────────────────────────────────────────────────
 // Used by both mouse click (via handleInteraction) and VR buttons (X/Y)
 
@@ -407,10 +461,19 @@ function navigateForward() {
     if (introText)              introText.visible = true
     if (currentText)            currentText.visible = true
     if (currentPlanet)          currentPlanet.visible = true
-    if (resultSprite)           resultSprite.visible = true
+    // Restore result or resources sprite depending on current state
+    if (resultSprite)           resultSprite.visible = !resourcesPanelOpen
+    if (resourcesSprite)        resourcesSprite.visible = resourcesPanelOpen
     selectionPlanets.forEach(p  => p.visible = true)
     selectionNameLabels.forEach(l => l.visible = true)
     if (selectionMessageSprite) selectionMessageSprite.visible = true
+    return
+  }
+
+  // Resources panel: in VR, forward arrow goes home; on desktop/mobile the HTML panel
+  // has no forward arrow so nothing extra is needed.
+  if (resourcesPanelOpen) {
+    if (isVRMode) location.reload()
     return
   }
 
@@ -443,11 +506,12 @@ function navigateForward() {
     if (resultMessageIndex < resultMessages.length - 1) {
       forwardSound.play()
       resultMessageIndex++
-      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, TOTAL_RESULT_MESSAGES)
       announceToScreenReader(resultMessages[resultMessageIndex])
     } else {
-      // Last result message — X returns home
-      location.reload()
+      // Last text result message → show resources panel
+      forwardSound.play()
+      openResourcesPanel()
     }
   } else if (currentText) {
     const data = planets[currentIndex]
@@ -482,7 +546,9 @@ function navigateBackward() {
     if (introText)              introText.visible = true
     if (currentText)            currentText.visible = true
     if (currentPlanet)          currentPlanet.visible = true
-    if (resultSprite)           resultSprite.visible = true
+    // Restore result or resources sprite depending on current state
+    if (resultSprite)           resultSprite.visible = !resourcesPanelOpen
+    if (resourcesSprite)        resourcesSprite.visible = resourcesPanelOpen
     selectionPlanets.forEach(p  => p.visible = true)
     selectionNameLabels.forEach(l => l.visible = true)
     if (selectionMessageSprite) selectionMessageSprite.visible = true
@@ -499,11 +565,15 @@ function navigateBackward() {
     }
   } else if (selectionMode) {
     // Nothing to go back to from selection screen
+  } else if (resourcesPanelOpen) {
+    // Back from resources panel → return to last text result message
+    backSound.play()
+    closeResourcesPanel()
   } else if (resultSprite) {
     if (resultMessageIndex > 0) {
       backSound.play()
       resultMessageIndex--
-      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, resultMessages.length)
+      updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, TOTAL_RESULT_MESSAGES)
     }
   } else if (currentText) {
     const data = planets[currentIndex]
@@ -576,6 +646,13 @@ logoEl.addEventListener('click', () => {
 
 homeBtn.addEventListener('click', () => {
   location.reload()
+})
+
+// Resources back button — closes the resources panel (desktop/mobile)
+resourcesBackBtn.addEventListener('click', (event) => {
+  event.stopPropagation()
+  backSound.play()
+  closeResourcesPanel()
 })
 
 const volumeImg = volumeBtn.querySelector('img')
@@ -676,6 +753,8 @@ window.addEventListener("click", (event) => {
   if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
   // Skip synthesized click events that follow a touchend (prevents double-fire on Chrome mobile)
   if (Date.now() - lastTouchTime < 300) return
+  // Skip 3D canvas interaction while the resources HTML overlay is showing (desktop/mobile)
+  if (resourcesPanelOpen && !isVRMode) return
 
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
@@ -718,8 +797,10 @@ window.addEventListener("click", (event) => {
 window.addEventListener("touchend", (event) => {
   lastTouchTime = Date.now()  // Record time so the synthesized 'click' that follows is suppressed
   if (!gameStarted) return
-  if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn')) return
+  if (event.target.closest('#launchBtn, #home-btn, #volume-btn, #planet-hop-logo, #vr-btn, #resources-panel')) return
   if (event.changedTouches.length === 0) return
+  // Skip 3D canvas interaction while the resources HTML overlay is showing (desktop/mobile)
+  if (resourcesPanelOpen && !isVRMode) return
 
   const touch = event.changedTouches[0]
   mouse.x = (touch.clientX / window.innerWidth) * 2 - 1

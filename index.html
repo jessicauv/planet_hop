@@ -275,6 +275,114 @@
         letter-spacing: 1px;
     }
 
+    /* ─── Resources panel (4th result slide, desktop/mobile only) ─────────── */
+    #resources-panel {
+        display: none;
+        position: fixed;
+        top: 44%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 25;
+        width: min(820px, 92vw);
+        background: rgba(0, 0, 128, 0.82);
+        border: 3px solid lightblue;
+        border-radius: 12px;
+        padding: 36px 44px 32px;
+        box-sizing: border-box;
+        color: lightblue;
+        font-family: 'Space Grotesk', sans-serif;
+        text-align: center;
+        box-shadow: 0 0 40px rgba(100, 180, 255, 0.25);
+    }
+
+    #resources-panel h2 {
+        font-size: clamp(16px, 2.4vw, 24px);
+        font-weight: 600;
+        margin: 0 0 28px;
+        line-height: 1.45;
+        color: lightblue;
+    }
+
+    .resource-link {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 14px 20px;
+        margin-bottom: 14px;
+        background: rgba(0, 20, 80, 0.55);
+        border: 2px solid rgba(173, 216, 230, 0.5);
+        border-radius: 8px;
+        color: lightblue;
+        text-decoration: none;
+        font-size: clamp(14px, 1.8vw, 18px);
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+        text-align: left;
+    }
+
+    .resource-link:hover {
+        background: rgba(0, 40, 120, 0.8);
+        border-color: lightblue;
+        transform: translateY(-2px);
+    }
+
+    .resource-link:active {
+        transform: translateY(0);
+    }
+
+    .resource-link .res-icon {
+        margin-right: 10px;
+        font-style: normal;
+    }
+
+    /* Dot indicators row */
+    .res-dots {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin: 24px 0 18px;
+    }
+
+    .res-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(173, 216, 230, 0.3);
+    }
+
+    .res-dot.active {
+        background: lightblue;
+    }
+
+    /* Back arrow button inside the panel */
+    #resources-back-btn {
+        background: transparent;
+        border: none;
+        color: lightblue;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 4px 16px;
+        margin-top: 4px;
+        box-shadow: none;
+        transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    #resources-back-btn:hover {
+        opacity: 0.75;
+        background: transparent;
+        transform: translateX(-3px);
+        box-shadow: none;
+    }
+
+    #resources-back-btn::before { display: none; }
+
+    @media (max-width: 480px) {
+        #resources-panel { padding: 24px 18px 20px; }
+        #resources-panel h2 { font-size: 15px; margin-bottom: 18px; }
+        .resource-link { font-size: 14px; padding: 12px 14px; }
+    }
+
     /* Fade to black scene transition */
     #scene-fade {
         position: fixed;
@@ -340,6 +448,27 @@
         </div>
     </div>
   </div>
+  <!-- Resources panel — shown after last result message on desktop/mobile -->
+  <div id="resources-panel" role="region" aria-label="Additional resources">
+    <h2>Discover more ways to help protect Earth with these resources.</h2>
+    <a class="resource-link" href="https://drive.google.com/file/d/1y_0GsRpLo65KTQUrnwXkiMf1-lesVB_k/view" target="_blank" rel="noopener noreferrer">
+      <span class="res-icon">📗</span>Climate Kids Activity Book
+    </a>
+    <a class="resource-link" href="https://www.earthrangers.com/EN/US/podcast/" target="_blank" rel="noopener noreferrer">
+      <span class="res-icon">🎙</span>Earth Rangers Podcast
+    </a>
+    <a class="resource-link" href="https://education.nationalgeographic.org/resource/great-green-wall/" target="_blank" rel="noopener noreferrer">
+      <span class="res-icon">🌍</span>The Great Green Wall Initiative
+    </a>
+    <div class="res-dots" aria-hidden="true">
+      <span class="res-dot"></span>
+      <span class="res-dot"></span>
+      <span class="res-dot"></span>
+      <span class="res-dot active"></span>
+    </div>
+    <button id="resources-back-btn" aria-label="Go back to previous message">Back</button>
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

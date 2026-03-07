@@ -376,6 +376,93 @@ export function updateInteractiveIntroText(sprite, textState, visibleChars = Inf
   sprite.material.needsUpdate = true
 }
 
+// ─── Resources box (4th result panel — VR only; desktop uses HTML overlay) ───
+
+function drawResourcesBoxCanvas(context, canvas, totalMessages) {
+  context.fillStyle = "rgba(0, 0, 128, 0.6)"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.strokeStyle = "lightblue"
+  context.lineWidth = 6
+  context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
+
+  context.fillStyle = "lightblue"
+  context.textAlign = "center"
+
+  // Header text
+  drawWrappedText(context, "Discover more ways to help protect Earth with these resources.", canvas.width / 2, 280, canvas.width - 400, 110, 132)
+
+  // Resource list
+  const resources = [
+    "📗  Climate Kids Activity Book",
+    "🎙  Earth Rangers Podcast",
+    "🌍  The Great Green Wall Initiative"
+  ]
+  context.font = "90px 'Space Grotesk', sans-serif"
+  context.textAlign = "center"
+  const listStartY = 680
+  resources.forEach((r, i) => {
+    context.fillText(r, canvas.width / 2, listStartY + i * 150)
+  })
+
+  // Page indicator dots
+  const dotRadius = 20
+  const dotSpacing = 70
+  const lastIndex = totalMessages - 1
+  const dotsStartX = canvas.width / 2 - (lastIndex * dotSpacing) / 2
+  const dotsY = canvas.height - 160
+  for (let i = 0; i < totalMessages; i++) {
+    context.beginPath()
+    context.arc(dotsStartX + i * dotSpacing, dotsY, dotRadius, 0, Math.PI * 2)
+    context.fillStyle = i === lastIndex ? "lightblue" : "rgba(173, 216, 230, 0.3)"
+    context.fill()
+  }
+
+  // Navigation arrows — back active, forward dimmed (last slide)
+  const buttonSize = 160
+  const bottomY = canvas.height - 160
+
+  context.fillStyle = "lightblue"
+  context.beginPath()
+  context.moveTo(280, bottomY - buttonSize / 2)
+  context.lineTo(160, bottomY)
+  context.lineTo(280, bottomY + buttonSize / 2)
+  context.fill()
+
+  context.fillStyle = "rgba(255, 255, 255, 0.3)"
+  context.beginPath()
+  context.moveTo(canvas.width - 280, bottomY - buttonSize / 2)
+  context.lineTo(canvas.width - 160, bottomY)
+  context.lineTo(canvas.width - 280, bottomY + buttonSize / 2)
+  context.fill()
+}
+
+export function createResourcesBox(totalMessages = 4) {
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  canvas.width = 2560
+  canvas.height = 1280
+
+  drawResourcesBoxCanvas(context, canvas, totalMessages)
+
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.needsUpdate = true
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    depthTest: true,
+    blending: THREE.NormalBlending
+  })
+  const sprite = new THREE.Sprite(material)
+  sprite.scale.set(18, 9, 1)
+  sprite.userData = {
+    backButtonArea:    { x: 160,  y: 1040, width: 120, height: 160 },
+    forwardButtonArea: { x: 2280, y: 1040, width: 120, height: 160 }
+  }
+  return sprite
+}
+
 // ─── VR instructions panel ────────────────────────────────────────────────────
 
 export function createVRInstructionsSprite() {

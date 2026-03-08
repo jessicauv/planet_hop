@@ -29,6 +29,6 @@
 | AI Tool Used | Purpose | What AI Generated | What You Changed | Verification Method |
 |--------------|---------|------------------|------------------|-------------------|
 | **Cline AI** | Code assistance and documentation | Generated Three.js scene setup, UI panel implementations, and documentation structure, VR setup, mobile responsiveness and accessibility features | Enhanced all AI developed features by modifying behavior/overall system design | Tested across multiple devices and browsers, reviewed for accuracy and completeness, debugged UI and functionality issues |
-| **ChatGPT** | Story content generation | Initial planet scene, storyline language translation | Modified and simplified storyline | Cross-referenced with NASA data sources |
+| **ChatGPT** | Story content generation | Initial planet scene, storyline language translation to Spanish | Modified and simplified storyline as needed | Cross-referenced with NASA data sources, verified Spanish translation from Spanish speaker |
 
 *Part of the #75HER Challenge | CreateHER Fest 2026*

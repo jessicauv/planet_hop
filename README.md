@@ -19,12 +19,14 @@ Through a short story-driven journey, players explore each planet, discover why 
 
 The experience combines education, storytelling, and immersive technology to make climate learning engaging and memorable.
 
-![Planet Hop Functionality Gif](docs/app.gif)
+Aligns with UN SDG 4 - Quality Education and UN SDG 13 - Climate Action
+
+<img src="docs/app.gif" alt="Planet Hop Functionality Gif" width="600" />
 
 **Key Features:**
 - **Immersive 3D Solar System Exploration**: Built with Three.js, players can explore a fully interactive 3D solar system with rotating planets and realistic textures based on NASA imagery, making space science visually engaging and easier to understand.
 - **Cross-Platform Web + VR Experience**: Planet Hop runs in the browser on laptops and phones and includes an “Enter VR” mode for compatible headsets, allowing players to stand inside the solar system and experience the story in immersive 3D.
-- **Accessible and Inclusive Learning Design**: The experience is designed to be accessible and inclusive, with screen reader support, keyboard navigation, high-contrast visuals, bilingual language support (English and Spanish), responsive design, and links to real-world climate action resources at the end of the journey.
+- **Accessible and Inclusive Learning Design**: The experience is designed to be accessible and inclusive, with screen reader support, keyboard navigation, high-contrast visuals, bilingual language support (English and Spanish) depending on browser language settings, responsive design, and links to real-world climate action resources at the end of the journey.
 
 ## 🚀 Quick Start & Demo Path
 
@@ -45,8 +47,9 @@ Access: Open http://localhost:5173 in your browser.
 - **Step 1:** Click "LAUNCH" on the intro screen → Experience a hyperspace transition into the 3D solar system
 - **Step 2:** Navigate through each planet using arrow keys, mouse clicks, or VR controllers → Learn why each planet is unsuitable for human life through interactive fact panels
 - **Step 3:** Select a planet from the final selection screen → Discover why Mars is the best option and learn how to protect Earth through climate action
+- **Optional:** Change browser language to Spanish to see translation. Can also enable screen reader for your system
 
-📹 **Demo Video:** [Insert Link] | 🔗 **Live Demo:** https://planet-hop-seven.vercel.app/
+📹 [Demo Video](https://youtu.be/LN-FqTSl0rQ)  | 🔗 [Live Demo](https://planet-hop-seven.vercel.app/) 
 
 ### VR Testing Instructions
 
@@ -111,22 +114,22 @@ Access: Open http://localhost:5173 in your browser.
 
 **Known Issues**
 - **VR Controller Mapping**: Some VR controllers may have slightly different button mappings than documented.
-- **Emulator Planet Selection Laggy**: In VR mode, the gaze at planet + X to select a planet is difficult to do with the Immersive Web Emulator. There's some lag when it comes to updating the camera's view direction.
+- **VR Emulator Planet Selection Laggy**: In VR mode, the gaze at planet + X to select a planet at the end is difficult to do with the Immersive Web Emulator. There's some lag when it comes to updating the camera's view direction.
 
 **Workarounds**
 - **VR Controllers**: Refer to your headset's documentation for exact button mappings
-- **Emulator Planet Selection Laggy**: Use your mouse to select a planet instead
+- **VR Emulator Planet Selection Laggy**: Use your mouse to select a planet instead
 
 **Next Steps & Future Enhancements**
 - **Advanced Interactions**: Add ability to enter planets, launch satellites, and interactive voice narration
 - **Additional Language Support**: Expand beyond English/Spanish to include more languages
-- **Educational Analytics**: Track learning outcomes and engagement metrics
+- **Educational Analytics**: Track learning outcomes and engagement metrics to measure against our success test
 
 ## 👥 Team & Acknowledgments
-- Team Name: Jess & Steph
+- **Team Name**: Jess & Steph
   - Jess - Software Engineer
   - Steph - Product & Design Lead
-- Special thanks to: CreateHER Fest
+- **Special thanks to**: CreateHER Fest
 
 ## 📄 License & Attributions
 

@@ -7,10 +7,70 @@ const loader = new THREE.TextureLoader()
 // before the first planet animation plays.
 const textureCache = new Map()
 
+// Fallback colors used when a planet texture image fails to load.
+// Each value is a hex color that approximates the planet's real appearance.
+const PLANET_FALLBACK_COLORS = {
+  mercury: 0x9e9e9e, // grey rocky surface
+  venus:   0xe8c07d, // pale golden-yellow
+  mars:    0xb5451b, // rusty red
+  jupiter: 0xc88b3a, // orange-tan
+  saturn:  0xe4d191, // pale gold
+  uranus:  0x7de8e8, // cyan-blue
+  neptune: 0x3f54ba, // deep blue
+}
+
+/**
+ * Creates a solid-colour fallback texture when a planet image fails to load.
+ * @param {number} color - hex colour integer
+ * @returns {THREE.CanvasTexture}
+ */
+function createFallbackTexture(color) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 64
+  canvas.height = 64
+  const ctx = canvas.getContext('2d')
+  const hex = '#' + color.toString(16).padStart(6, '0')
+  ctx.fillStyle = hex
+  ctx.fillRect(0, 0, 64, 64)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+/**
+ * Returns the fallback colour for a texture URL, matched by planet name in the path.
+ * @param {string} url - texture path, e.g. "/textures/mars.jpg"
+ * @returns {number} hex colour integer
+ */
+function fallbackColorForUrl(url) {
+  const lower = url.toLowerCase()
+  for (const [name, color] of Object.entries(PLANET_FALLBACK_COLORS)) {
+    if (lower.includes(name)) return color
+  }
+  return 0x555555 // generic grey if planet name not matched
+}
+
 export function preloadPlanetTextures(planetsData) {
   planetsData.forEach(planet => {
     if (!textureCache.has(planet.texture)) {
-      const tex = loader.load(planet.texture)
+      const tex = loader.load(
+        planet.texture,
+        // onLoad — apply quality settings once the image has decoded
+        (loadedTex) => {
+          loadedTex.anisotropy = 16
+          loadedTex.colorSpace = THREE.SRGBColorSpace
+          loadedTex.needsUpdate = true
+        },
+        // onProgress — not used but required positional arg
+        undefined,
+        // onError — swap in the fallback solid-colour texture
+        () => {
+          console.warn(`Planet.Hop: texture failed to load — "${planet.texture}". Using fallback colour.`)
+          const fallback = createFallbackTexture(fallbackColorForUrl(planet.texture))
+          tex.image  = fallback.image
+          tex.needsUpdate = true
+        }
+      )
       tex.anisotropy = 16
       tex.colorSpace = THREE.SRGBColorSpace
       textureCache.set(planet.texture, tex)
@@ -68,7 +128,24 @@ export function createPlanet(data) {
   // Use the pre-loaded cached texture if available; fall back to loading on demand.
   let texture = textureCache.get(data.texture)
   if (!texture) {
-    texture = loader.load(data.texture)
+    texture = loader.load(
+      data.texture,
+      // onLoad — apply quality settings once the image has decoded
+      (loadedTex) => {
+        loadedTex.anisotropy = 16
+        loadedTex.colorSpace = THREE.SRGBColorSpace
+        loadedTex.needsUpdate = true
+      },
+      // onProgress — not used
+      undefined,
+      // onError — swap in a solid-colour fallback so the planet still renders
+      () => {
+        console.warn(`Planet.Hop: texture failed to load — "${data.texture}". Using fallback colour.`)
+        const fallback = createFallbackTexture(fallbackColorForUrl(data.texture))
+        texture.image = fallback.image
+        texture.needsUpdate = true
+      }
+    )
     texture.anisotropy = 16
     texture.colorSpace = THREE.SRGBColorSpace
     textureCache.set(data.texture, texture)

@@ -95,25 +95,8 @@ export function createSpaceAudio() {
   })
 }
 
-// Function to create layered starfield + Milky Way
+// Function to create layered starfield
 export function createStarfield(scene) {
-  const textureLoader = new THREE.TextureLoader()
-
-  // Milky Way sphere (rendered from inside — side: BackSide)
-  const milkyWayTexture = textureLoader.load('/textures/milkyway.jpg')
-  milkyWayTexture.colorSpace = THREE.SRGBColorSpace
-  milkyWayTexture.minFilter = THREE.LinearFilter
-  milkyWayTexture.magFilter = THREE.LinearFilter
-  milkyWayTexture.anisotropy = 4
-
-  const skyGeo = new THREE.SphereGeometry(500, 64, 64)
-  const skyMat = new THREE.MeshBasicMaterial({
-    map: milkyWayTexture,
-    side: THREE.BackSide
-  })
-  const milkyWaySphere = new THREE.Mesh(skyGeo, skyMat)
-  scene.add(milkyWaySphere)
-
   // Three depth layers of particle stars for parallax depth
   function createStars(count, spread, size) {
     const geometry = new THREE.BufferGeometry()
@@ -159,6 +142,6 @@ export function createStarfield(scene) {
   farStars.position.z = -50
   distantStars.position.z = -100
 
-  return { milkyWaySphere, closeStars, farStars, distantStars }
+  return { closeStars, farStars, distantStars }
 }
 

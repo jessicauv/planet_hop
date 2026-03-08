@@ -155,8 +155,8 @@ renderer.xr.addEventListener('sessionend', () => {
 // This runs in the background while the intro screen and story panels are showing.
 preloadPlanetTextures(planets)
 
-// Create stars + Milky Way
-const { milkyWaySphere, closeStars, farStars, distantStars } = createStarfield(scene)
+// Create starfield
+const { closeStars, farStars, distantStars } = createStarfield(scene)
 
 let currentIndex = 0
 let currentFactIndex = 0
@@ -970,10 +970,9 @@ renderer.setAnimationLoop(() => {
 
   controls.update()
 
-  closeStars.rotation.y  += 0.0005
-  farStars.rotation.y    += 0.0002
+  closeStars.rotation.y   += 0.0005
+  farStars.rotation.y     += 0.0002
   distantStars.rotation.y += 0.0001
-  milkyWaySphere.rotation.y += 0.00005
 
   // Planet warp-zoom transition
   if (planetTransition.active) {

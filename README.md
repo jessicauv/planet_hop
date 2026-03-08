@@ -47,7 +47,7 @@ Access: Open http://localhost:5173 in your browser.
 - **Step 1:** Click "LAUNCH" on the intro screen → Experience a hyperspace transition into the 3D solar system
 - **Step 2:** Navigate through each planet using arrow keys, mouse clicks, or VR controllers → Learn why each planet is unsuitable for human life through interactive fact panels
 - **Step 3:** Select a planet from the final selection screen → Discover why Mars is the best option and learn how to protect Earth through climate action
-- **Optional:** Change browser language to Spanish to see translation. Can also enable screen reader for your system
+- **Optional:** Change browser language to Spanish to see translation. Can also enable screen reader for your system if you would like to test that functionality.
 
 📹 [Demo Video](https://youtu.be/LN-FqTSl0rQ)  | 🔗 [Live Demo](https://planet-hop-seven.vercel.app/) 
 

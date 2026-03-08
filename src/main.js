@@ -13,6 +13,9 @@ document.documentElement.lang = lang
 // t() — picks the localized variant from a bilingual {en, es} object
 function t(obj) { return (obj[lang] ?? obj['en']) }
 
+// localName() — returns the planet's display name in the current language
+function localName(data) { return (lang === 'es' && data.nameEs) ? data.nameEs : data.name }
+
 // ─── Translate static HTML intro screen at page load ─────────────────────────
 if (lang === 'es') {
   const subtitle = document.querySelector('.typing-text')
@@ -21,6 +24,27 @@ if (lang === 'es') {
   if (launchBtnEl) launchBtnEl.textContent = 'LANZAR'
   const homeBtnEl = document.getElementById('home-btn')
   if (homeBtnEl) homeBtnEl.textContent = '⟵ VOLVER AL INICIO'
+
+  // Translate resources panel heading and back button
+  const resourcesH2 = document.querySelector('#resources-panel h2')
+  if (resourcesH2) resourcesH2.textContent = 'Descubre más formas de proteger la Tierra con estos recursos.'
+  const resourcesBackBtnEl = document.getElementById('resources-back-btn')
+  if (resourcesBackBtnEl) resourcesBackBtnEl.textContent = 'Atrás'
+
+  // Replace resource links with Spanish equivalents
+  const links = document.querySelectorAll('#resources-panel .resource-link')
+  if (links[0]) {
+    links[0].href = 'https://kidsandclimate.stanford.edu/sites/g/files/sbiybj24441/files/media/file/spanish_activity_book.pdf'
+    links[0].innerHTML = '<span class="res-icon">📗</span>Libro de Actividades sobre el Clima'
+  }
+  if (links[1]) {
+    links[1].href = 'https://accionverde.org.co/cambio-climatico/'
+    links[1].innerHTML = '<span class="res-icon">🌿</span>Cambio climático explicado'
+  }
+  if (links[2]) {
+    links[2].href = 'https://www.youtube.com/watch?v=FeKld35Pxhg'
+    links[2].innerHTML = '<span class="res-icon">▶️</span>El Cambio Climático para Niños'
+  }
 }
 
 const forwardSound = new Howl({ src: ['/audio/front_arrow.mp3'], html5: true })
@@ -30,6 +54,19 @@ const successSound = new Howl({ src: ['/audio/success.mp3'], html5: true })
 
 
 const { scene, camera, renderer, controls, vrButton } = createScene()
+
+// Translate the VR button text when Spanish is detected.
+// Three.js VRButton updates its text dynamically (ENTER VR / EXIT VR / VR NOT SUPPORTED),
+// so a MutationObserver is used to catch every change and swap the text.
+if (lang === 'es' && vrButton) {
+  const translateVRBtn = () => {
+    if (vrButton.textContent === 'ENTER VR')        vrButton.textContent = 'ENTRAR EN VR'
+    else if (vrButton.textContent === 'EXIT VR')    vrButton.textContent = 'SALIR DE VR'
+    else if (vrButton.textContent === 'VR NOT SUPPORTED') vrButton.textContent = 'VR NO COMPATIBLE'
+  }
+  translateVRBtn()  // run once on init in case text is already set
+  new MutationObserver(translateVRBtn).observe(vrButton, { childList: true, subtree: true, characterData: true })
+}
 
 // ─── Responsive layout constants (1 unit ≈ 1 metre in VR) ──────────────────
 let isVRMode = false
@@ -81,7 +118,7 @@ renderer.xr.addEventListener('sessionstart', () => {
   applyLayout()
   // Show VR controls instructions — only if the game has launched
   if (gameStarted) {
-    vrInstructionsSprite = createVRInstructionsSprite()
+    vrInstructionsSprite = createVRInstructionsSprite(lang)
     vrInstructionsSprite.position.set(...VR_LAYOUT.introPos)
     scene.add(vrInstructionsSprite)
     // Hide ALL current scene content so only the VR instructions show
@@ -92,7 +129,7 @@ renderer.xr.addEventListener('sessionstart', () => {
     // If resources HTML panel was showing, swap it for the VR canvas sprite
     if (resourcesPanelOpen) {
       resourcesPanelEl.style.display = 'none'
-      resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES)
+      resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES, lang)
       resourcesSprite.position.set(...VR_LAYOUT.resultPos)
       resourcesSprite.scale.set(...VR_LAYOUT.resultScale)
       scene.add(resourcesSprite)
@@ -168,11 +205,11 @@ function startTypewriter(text, mode) {
 function applyTypewriterFrame() {
   const chars = typewriter.visibleChars
   if (typewriter.mode === 'intro' && introText) {
-    updateInteractiveIntroText(introText, introTextState, chars, introBodyTexts)
+    updateInteractiveIntroText(introText, introTextState, chars, introBodyTexts, lang)
   } else if (typewriter.mode === 'fact' && currentText) {
     const data = planets[currentIndex]
     const facts = t(data.facts)
-    updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, facts.length, chars)
+    updateFactTextBox(currentText, facts[currentFactIndex], localName(data), currentIndex, currentFactIndex, facts.length, chars)
   } else if (typewriter.mode === 'result' && resultSprite) {
     updateResultBox(resultSprite, resultMessages[resultMessageIndex], resultMessageIndex, TOTAL_RESULT_MESSAGES, chars)
   }
@@ -337,7 +374,7 @@ function showPlanetSelection() {
     const labelY = mobileGrid
       ? (i < MOBILE_ROW1_COUNT ? lay.selRow1LabelY : lay.selRow2LabelY)
       : lay.selLabelY
-    const label = createNameLabel(planetData.name)
+    const label = createNameLabel(localName(planetData))
     label.position.set(px, labelY, lay.selZ)
     label.scale.set(...lay.selLabelScale)
     scene.add(label)
@@ -390,7 +427,7 @@ function loadPlanetInstant(index, factIndex = 0) {
   scene.add(currentPlanet)
 
   const facts = t(data.facts)
-  currentText = createFactTextBox(facts[factIndex], data.name, index, factIndex, facts.length)
+  currentText = createFactTextBox(facts[factIndex], localName(data), index, factIndex, facts.length)
   currentText.position.set(...lay.factPos)
   currentText.scale.set(...lay.factScale)
   scene.add(currentText)
@@ -427,7 +464,7 @@ function openResourcesPanel() {
   if (isVRMode) {
     // VR: show canvas sprite, hide result sprite
     if (resultSprite) resultSprite.visible = false
-    resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES)
+    resourcesSprite = createResourcesBox(TOTAL_RESULT_MESSAGES, lang)
     resourcesSprite.position.set(...curLayout().resultPos)
     resourcesSprite.scale.set(...curLayout().resultScale)
     scene.add(resourcesSprite)
@@ -435,7 +472,11 @@ function openResourcesPanel() {
     // Desktop/Mobile: show HTML overlay, hide result sprite
     if (resultSprite) resultSprite.visible = false
     resourcesPanelEl.style.display = 'block'
-    announceToScreenReader('Discover more ways to help protect Earth with these resources. Climate Kids Activity Book. Earth Rangers Podcast. The Great Green Wall Initiative.')
+    announceToScreenReader(
+      lang === 'es'
+        ? 'Descubre más formas de proteger la Tierra con estos recursos. Libro de actividades de Climate Kids. Podcast Earth Rangers. La Gran Muralla Verde.'
+        : 'Discover more ways to help protect Earth with these resources. Climate Kids Activity Book. Earth Rangers Podcast. The Great Green Wall Initiative.'
+    )
   }
 }
 
@@ -489,7 +530,7 @@ function navigateForward() {
       announceToScreenReader(introBodyTexts[introTextState])
     } else if (introTextState < 2) {
       introTextState++
-      updateInteractiveIntroText(introText, introTextState, 0, introBodyTexts)
+      updateInteractiveIntroText(introText, introTextState, 0, introBodyTexts, lang)
       startTypewriter(introBodyTexts[introTextState], 'intro')
       announceToScreenReader(introBodyTexts[introTextState])
     } else {
@@ -525,8 +566,8 @@ function navigateForward() {
     if (currentFactIndex < totalFacts - 1) {
       if (currentFactIndex === totalFacts - 2) resultSound.play()
       currentFactIndex++
-      updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
-      announceToScreenReader(`${data.name}. ${facts[currentFactIndex]}`)
+      updateFactTextBox(currentText, facts[currentFactIndex], localName(data), currentIndex, currentFactIndex, totalFacts)
+      announceToScreenReader(`${localName(data)}. ${facts[currentFactIndex]}`)
     } else if (currentIndex < planets.length - 1) {
       forwardSound.play()
       currentIndex++
@@ -565,7 +606,7 @@ function navigateBackward() {
       backSound.play()
       introTextState = 0
       typewriter.active = false
-      updateInteractiveIntroText(introText, introTextState, 0)
+      updateInteractiveIntroText(introText, introTextState, 0, introBodyTexts, lang)
       startTypewriter(introBodyTexts[introTextState], 'intro')
     }
   } else if (selectionMode) {
@@ -587,7 +628,7 @@ function navigateBackward() {
     if (currentFactIndex > 0 || currentIndex > 0) backSound.play()
     if (currentFactIndex > 0) {
       currentFactIndex--
-      updateFactTextBox(currentText, facts[currentFactIndex], data.name, currentIndex, currentFactIndex, totalFacts)
+      updateFactTextBox(currentText, facts[currentFactIndex], localName(data), currentIndex, currentFactIndex, totalFacts)
     } else if (currentIndex > 0) {
       currentIndex--
       const prevData = planets[currentIndex]
@@ -696,7 +737,7 @@ launchBtn.addEventListener("click", (event) => {
 
   spaceAudio.play()
 
-  introText = createInteractiveIntroText(introTextState, 0, introBodyTexts)
+  introText = createInteractiveIntroText(introTextState, 0, introBodyTexts, lang)
   introText.position.set(...curLayout().introPos)
   introText.scale.set(...curLayout().introScale)
   scene.add(introText)
@@ -715,7 +756,11 @@ launchBtn.addEventListener("click", (event) => {
   lookHintEl.style.display = 'block'
 
   startTypewriter(introBodyTexts[introTextState], 'intro')
-  announceToScreenReader("Alert: Earth has been badly damaged. " + introBodyTexts[0])
+  announceToScreenReader(
+    lang === 'es'
+      ? "Alerta: La Tierra ha sido gravemente dañada. " + introBodyTexts[0]
+      : "Alert: Earth has been badly damaged. " + introBodyTexts[0]
+  )
   gameStarted = true
 
   // Give the canvas an accessible label so screen readers identify it

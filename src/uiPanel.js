@@ -200,7 +200,7 @@ function drawResultBoxCanvas(context, canvas, text, messageIndex, totalMessages,
   const displayResultText = Number.isFinite(visibleChars) ? text.slice(0, visibleChars) : text
   context.fillStyle = "lightblue"
   context.textAlign = "center"
-  drawWrappedText(context, displayResultText, canvas.width / 2, 320, canvas.width - 400, 120, 144)
+  drawWrappedText(context, displayResultText, canvas.width / 2, 240, canvas.width - 400, 120, 144)
 
   // Page indicator dots
   const dotRadius = 20
@@ -306,18 +306,21 @@ function drawNavigationButtons(context, width, height, textState) {
   context.fill()
 }
 
-function drawIntroCanvas(context, canvas, textState, visibleChars, bodies) {
+function drawIntroCanvas(context, canvas, textState, visibleChars, bodies, lang = 'en') {
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
   context.strokeStyle = "lightblue"
   context.lineWidth = 6
   context.strokeRect(20, 20, canvas.width - 40, canvas.height - 40)
 
+  const alertLabel   = lang === 'es' ? "🚨 ALERTA"                          : "🚨 ALERT"
+  const damagedLabel = lang === 'es' ? "La Tierra ha sido gravemente dañada" : "Earth has been badly damaged"
+
   context.fillStyle = "lightblue"
   context.font = "bold 120px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
-  context.fillText("🚨 ALERT", canvas.width / 2, 200)
-  context.fillText("Earth has been badly damaged", canvas.width / 2, 340)
+  context.fillText(alertLabel,   canvas.width / 2, 200)
+  context.fillText(damagedLabel, canvas.width / 2, 340)
 
   const bodyText = bodies[textState] || bodies[0]
   const displayText = Number.isFinite(visibleChars) ? bodyText.slice(0, visibleChars) : bodyText
@@ -327,14 +330,14 @@ function drawIntroCanvas(context, canvas, textState, visibleChars, bodies) {
   drawNavigationButtons(context, canvas.width, canvas.height, textState)
 }
 
-export function createInteractiveIntroText(textState = 0, visibleChars = 0, bodyTexts = null) {
+export function createInteractiveIntroText(textState = 0, visibleChars = 0, bodyTexts = null, lang = 'en') {
   const bodies = bodyTexts || DEFAULT_INTRO_BODIES
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 2560
   canvas.height = 1280
 
-  drawIntroCanvas(context, canvas, textState, visibleChars, bodies)
+  drawIntroCanvas(context, canvas, textState, visibleChars, bodies, lang)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -359,7 +362,7 @@ export function createInteractiveIntroText(textState = 0, visibleChars = 0, body
   return sprite
 }
 
-export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity, bodyTexts = null) {
+export function updateInteractiveIntroText(sprite, textState, visibleChars = Infinity, bodyTexts = null, lang = 'en') {
   const bodies = bodyTexts || DEFAULT_INTRO_BODIES
   sprite.userData.textState = textState
 
@@ -368,7 +371,7 @@ export function updateInteractiveIntroText(sprite, textState, visibleChars = Inf
   canvas.width = 2560
   canvas.height = 1280
 
-  drawIntroCanvas(context, canvas, textState, visibleChars, bodies)
+  drawIntroCanvas(context, canvas, textState, visibleChars, bodies, lang)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -378,7 +381,7 @@ export function updateInteractiveIntroText(sprite, textState, visibleChars = Inf
 
 // ─── Resources box (4th result panel — VR only; desktop uses HTML overlay) ───
 
-function drawResourcesBoxCanvas(context, canvas, totalMessages) {
+function drawResourcesBoxCanvas(context, canvas, totalMessages, lang = 'en') {
   context.fillStyle = "rgba(0, 0, 128, 0.6)"
   context.fillRect(0, 0, canvas.width, canvas.height)
   context.strokeStyle = "lightblue"
@@ -388,15 +391,25 @@ function drawResourcesBoxCanvas(context, canvas, totalMessages) {
   context.fillStyle = "lightblue"
   context.textAlign = "center"
 
+  const resourcesHeader = lang === 'es'
+    ? "Descubre más formas de proteger la Tierra con estos recursos."
+    : "Discover more ways to help protect Earth with these resources."
+
   // Header text
-  drawWrappedText(context, "Discover more ways to help protect Earth with these resources.", canvas.width / 2, 280, canvas.width - 400, 110, 132)
+  drawWrappedText(context, resourcesHeader, canvas.width / 2, 280, canvas.width - 400, 110, 132)
 
   // Resource list
-  const resources = [
-    "📗  Climate Kids Activity Book",
-    "🎙  Earth Rangers Podcast",
-    "🌍  The Great Green Wall Initiative"
-  ]
+  const resources = lang === 'es'
+    ? [
+        "📗  Libro de Actividades sobre el Clima",
+        "🌿  Cambio climático explicado",
+        "▶️  El Cambio Climático para Niños"
+      ]
+    : [
+        "📗  Climate Kids Activity Book",
+        "🎙  Earth Rangers Podcast",
+        "🌍  The Great Green Wall Initiative"
+      ]
   context.font = "90px 'Space Grotesk', sans-serif"
   context.textAlign = "center"
   const listStartY = 680
@@ -436,13 +449,13 @@ function drawResourcesBoxCanvas(context, canvas, totalMessages) {
   context.fill()
 }
 
-export function createResourcesBox(totalMessages = 4) {
+export function createResourcesBox(totalMessages = 4, lang = 'en') {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 2560
   canvas.height = 1280
 
-  drawResourcesBoxCanvas(context, canvas, totalMessages)
+  drawResourcesBoxCanvas(context, canvas, totalMessages, lang)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true
@@ -465,7 +478,7 @@ export function createResourcesBox(totalMessages = 4) {
 
 // ─── VR instructions panel ────────────────────────────────────────────────────
 
-export function createVRInstructionsSprite() {
+export function createVRInstructionsSprite(lang = 'en') {
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   canvas.width = 2560
@@ -480,8 +493,24 @@ export function createVRInstructionsSprite() {
   context.fillStyle = 'lightblue'
   context.textAlign = 'center'
 
+  const vrTitle   = lang === 'es' ? 'CONTROLES VR'        : 'VR CONTROLS'
+  const beginText = lang === 'es' ? 'Pulsa  X  para comenzar' : 'Press  X  to begin'
+  const rows = lang === 'es'
+    ? [
+        ['Botón X',                    'Siguiente / Seleccionar'],
+        ['Botón Y',                    'Atrás'],
+        ['Palanca derecha (presionar)', 'Silenciar / Activar'],
+        ['Mirar planeta + X',          'Elegir ese planeta'],
+      ]
+    : [
+        ['X Button',               'Next / Select'],
+        ['Y Button',               'Back'],
+        ['Right Thumbstick Press', 'Mute / Unmute'],
+        ['Gaze at planet + X',     'Choose that planet'],
+      ]
+
   context.font = "bold 130px 'Press Start 2P', cursive"
-  context.fillText('VR CONTROLS', canvas.width / 2, 200)
+  context.fillText(vrTitle, canvas.width / 2, 200)
 
   // Divider line
   context.strokeStyle = 'rgba(173, 216, 230, 0.4)'
@@ -498,13 +527,6 @@ export function createVRInstructionsSprite() {
   let y = 410
   const gap = 130
 
-  const rows = [
-    ['X Button',               'Next / Select'],
-    ['Y Button',               'Back'],
-    ['Right Thumbstick Press', 'Mute / Unmute'],
-    ['Gaze at planet + X',     'Choose that planet'],
-  ]
-
   rows.forEach(([label, value]) => {
     context.textAlign = 'left'
     context.fillText(label, lx, y)
@@ -516,7 +538,7 @@ export function createVRInstructionsSprite() {
   context.textAlign = 'center'
   context.font = "bold 95px 'Space Grotesk', sans-serif"
   context.fillStyle = 'rgba(173, 216, 230, 0.75)'
-  context.fillText('Press  X  to begin', canvas.width / 2, 1150)
+  context.fillText(beginText, canvas.width / 2, 1150)
 
   const texture = new THREE.CanvasTexture(canvas)
   texture.needsUpdate = true

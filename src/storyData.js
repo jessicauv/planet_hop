@@ -50,6 +50,7 @@ export const selectionMessage = {
 export const planets = [
   {
     name: "Mercury",
+    nameEs: "Mercurio",
     texture: "/textures/mercury.jpg",
     size: 1.3,
     facts: {
@@ -67,6 +68,7 @@ export const planets = [
   },
   {
     name: "Venus",
+    nameEs: "Venus",
     texture: "/textures/venus.jpg",
     size: 1.3,
     facts: {
@@ -84,6 +86,7 @@ export const planets = [
   },
   {
     name: "Mars",
+    nameEs: "Marte",
     texture: "/textures/mars.jpg",
     size: 1.3,
     facts: {
@@ -101,6 +104,7 @@ export const planets = [
   },
   {
     name: "Jupiter",
+    nameEs: "Júpiter",
     texture: "/textures/jupiter.jpg",
     size: 1.3,
     facts: {
@@ -118,6 +122,7 @@ export const planets = [
   },
   {
     name: "Saturn",
+    nameEs: "Saturno",
     texture: "/textures/saturn.jpg",
     size: 1.3,
     facts: {
@@ -135,6 +140,7 @@ export const planets = [
   },
   {
     name: "Uranus",
+    nameEs: "Urano",
     texture: "/textures/uranus.jpg",
     size: 1.3,
     facts: {
@@ -152,6 +158,7 @@ export const planets = [
   },
   {
     name: "Neptune",
+    nameEs: "Neptuno",
     texture: "/textures/neptune.jpg",
     size: 1.3,
     facts: {
